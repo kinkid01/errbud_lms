@@ -10,6 +10,7 @@ export interface AuthUser {
   avatar?: string;
   role: UserRole;
   createdAt?: string;
+  lastLogin?: string;
 }
 
 const STORAGE_KEY = 'errbud_user';

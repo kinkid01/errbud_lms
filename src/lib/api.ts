@@ -21,7 +21,7 @@ api.interceptors.request.use((config) => {
 export function normalize<T extends Record<string, any>>(doc: T): T {
   if (!doc) return doc;
   const { _id, __v, ...rest } = doc;
-  return { id: _id ?? rest.id, ...rest } as T;
+  return { id: _id ?? rest.id, ...rest } as unknown as T;
 }
 
 export default api;

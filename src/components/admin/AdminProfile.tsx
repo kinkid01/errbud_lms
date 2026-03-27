@@ -255,7 +255,7 @@ export default function AdminProfile() {
                   <HStack spacing={2}>
                     <Icon as={FiCalendar} color="gray.400" />
                     <Text color="gray.600">
-                      Member since {new Date(user.createdAt).toLocaleDateString()}
+                      Member since {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
                     </Text>
                   </HStack>
                   <HStack spacing={2}>
