@@ -6,7 +6,12 @@ const app = express();
 
 // ── Middleware ──────────────────────────────────────────
 // Allow requests from the Next.js frontend
-app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:3000' }));
+const allowedOrigins = [
+  'http://localhost:3000',
+  'https://errbud-lms.vercel.app',
+  process.env.CLIENT_URL,
+].filter(Boolean);
+app.use(cors({ origin: allowedOrigins, credentials: true }));
 
 // Parse incoming JSON request bodies
 app.use(express.json());
