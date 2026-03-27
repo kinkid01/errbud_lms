@@ -8,8 +8,9 @@ const app = express();
 // Allow requests from the Next.js frontend
 app.use(cors({ origin: true, credentials: true }));
 
-// Parse incoming JSON request bodies
-app.use(express.json());
+// Parse incoming JSON request bodies (10mb limit for base64 image uploads)
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // ── Routes ─────────────────────────────────────────────
 app.use('/api/auth',         require('./routes/auth'));
