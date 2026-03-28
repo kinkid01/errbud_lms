@@ -54,6 +54,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(READ_TIME);
+  const [hasQuiz, setHasQuiz] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Load lessons + restore progress from backend ──────────────────────────
@@ -110,6 +111,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
         });
 
         setLessons(built);
+        setHasQuiz(raw.some((l: any) => l.quiz?.questions?.length > 0));
 
         // Jump straight to the first uncompleted lesson
         const firstUncompleted = built.findIndex((l) => !l.isCompleted);
@@ -317,7 +319,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
           })}
         </VStack>
 
-        {allDone && (
+        {allDone && hasQuiz && (
           <Box px={5} mt={6}>
             <Divider mb={4} />
             <Link href={`/courses/${courseId}/quiz`}>
@@ -382,17 +384,86 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
                 <Divider />
 
                 <Box>
-                  {current.content.split("\n\n").map((para, i) => (
-                    <Text
-                      key={i}
-                      color="gray.700"
-                      fontSize="md"
-                      lineHeight="1.8"
-                      mb={i < current.content.split("\n\n").length - 1 ? 4 : 0}
-                    >
-                      {para}
-                    </Text>
-                  ))}
+                  {(() => {
+                    const lines = current.content.split('\n');
+                    const elements: React.ReactNode[] = [];
+                    let key = 0;
+                    let i = 0;
+
+                    while (i < lines.length) {
+                      const line = lines[i];
+                      const k = key++;
+
+                      // Empty line → small spacer
+                      if (line.trim() === '') {
+                        elements.push(<Box key={k} h={3} />);
+                        i++;
+                        continue;
+                      }
+
+                      // Bullet line (•, -, *, ·)
+                      if (/^\s*[•\-\*·]\s/.test(line)) {
+                        const bullets: string[] = [];
+                        while (i < lines.length && /^\s*[•\-\*·]\s/.test(lines[i])) {
+                          bullets.push(lines[i].replace(/^\s*[•\-\*·]\s*/, ''));
+                          i++;
+                        }
+                        elements.push(
+                          <Box key={k} mb={3}>
+                            {bullets.map((b, bi) => (
+                              <HStack key={bi} spacing={2} align="start" mb={1}>
+                                <Text color="blue.400" fontSize="md" lineHeight="1.8" flexShrink={0}>•</Text>
+                                <Text color="gray.700" fontSize="md" lineHeight="1.8">{b}</Text>
+                              </HStack>
+                            ))}
+                          </Box>
+                        );
+                        continue;
+                      }
+
+                      // Numbered line (1., 2., etc.)
+                      if (/^\s*\d+\.\s/.test(line)) {
+                        const items: { num: string; text: string }[] = [];
+                        while (i < lines.length && /^\s*\d+\.\s/.test(lines[i])) {
+                          const m = lines[i].match(/^\s*(\d+)\.\s+(.*)/);
+                          if (m) items.push({ num: m[1], text: m[2] });
+                          i++;
+                        }
+                        elements.push(
+                          <Box key={k} mb={3}>
+                            {items.map((item, ii) => (
+                              <HStack key={ii} spacing={2} align="start" mb={1}>
+                                <Text color="blue.500" fontSize="md" lineHeight="1.8" fontWeight="semibold" flexShrink={0}>
+                                  {item.num}.
+                                </Text>
+                                <Text color="gray.700" fontSize="md" lineHeight="1.8">{item.text}</Text>
+                              </HStack>
+                            ))}
+                          </Box>
+                        );
+                        continue;
+                      }
+
+                      // Regular text — collect consecutive lines into one paragraph
+                      const paragraphLines: string[] = [];
+                      while (
+                        i < lines.length &&
+                        lines[i].trim() !== '' &&
+                        !/^\s*[•\-\*·]\s/.test(lines[i]) &&
+                        !/^\s*\d+\.\s/.test(lines[i])
+                      ) {
+                        paragraphLines.push(lines[i]);
+                        i++;
+                      }
+                      elements.push(
+                        <Text key={k} color="gray.700" fontSize="md" lineHeight="1.8" mb={4}>
+                          {paragraphLines.join(' ')}
+                        </Text>
+                      );
+                    }
+
+                    return elements;
+                  })()}
                 </Box>
 
                 {current.images.length > 0 && (
@@ -528,7 +599,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
                 </Button>
               )}
 
-              {allDone && activeIndex === lessons.length - 1 && (
+              {allDone && hasQuiz && activeIndex === lessons.length - 1 && (
                 <Link href={`/courses/${courseId}/quiz`}>
                   <Button colorScheme="green" borderRadius="xl" rightIcon={<FiAward />}>
                     Take the Quiz

@@ -157,17 +157,42 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
     }));
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (files.length === 0) return;
-    // Convert each file to base64 and append
-    files.forEach((file) => {
+  const compressImage = (file: File): Promise<string> =>
+    new Promise((resolve) => {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setImages((prev) => [...prev, reader.result as string]);
+        const img = new window.Image();
+        img.onload = () => {
+          const MAX_WIDTH = 900;
+          const scale = img.width > MAX_WIDTH ? MAX_WIDTH / img.width : 1;
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.round(img.width * scale);
+          canvas.height = Math.round(img.height * scale);
+          const ctx = canvas.getContext("2d")!;
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+          // Iteratively reduce quality until base64 is under 350 KB
+          const TARGET_BYTES = 350 * 1024;
+          let quality = 0.80;
+          let dataUrl = canvas.toDataURL("image/jpeg", quality);
+          while (dataUrl.length > TARGET_BYTES && quality > 0.30) {
+            quality -= 0.10;
+            dataUrl = canvas.toDataURL("image/jpeg", quality);
+          }
+          resolve(dataUrl);
+        };
+        img.src = reader.result as string;
       };
       reader.readAsDataURL(file);
     });
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (files.length === 0) return;
+    for (const file of files) {
+      const compressed = await compressImage(file);
+      setImages((prev) => [...prev, compressed]);
+    }
     // Reset input so the same file can be re-selected
     e.target.value = "";
   };

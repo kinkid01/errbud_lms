@@ -379,19 +379,25 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
                       </HStack>
                     </Flex>
 
-                    {curriculum.visualContent && (
-                      <Box
-                        w="full"
-                        h="150px"
-                        borderRadius="md"
-                        bg="gray.100"
-                        backgroundImage={curriculum.visualContent}
-                        backgroundSize="cover"
-                        backgroundPosition="center"
-                        border="1px"
-                        borderColor="gray.300"
-                      />
-                    )}
+                    {curriculum.visualContent && (() => {
+                      try {
+                        const imgs = JSON.parse(curriculum.visualContent!);
+                        const src = Array.isArray(imgs) ? imgs[0] : curriculum.visualContent;
+                        return (
+                          <Box
+                            w="full"
+                            h="150px"
+                            borderRadius="md"
+                            bg="gray.100"
+                            backgroundImage={`url(${src})`}
+                            backgroundSize="cover"
+                            backgroundPosition="center"
+                            border="1px"
+                            borderColor="gray.300"
+                          />
+                        );
+                      } catch { return null; }
+                    })()}
 
                     <Accordion allowToggle>
                       <AccordionItem border="none">
