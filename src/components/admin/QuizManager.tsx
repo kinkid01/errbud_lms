@@ -357,8 +357,8 @@ const QuizManager: React.FC<QuizManagerProps> = ({
 
                           <Box p={3} bg="blue.50" borderRadius="md" border="1px" borderColor="blue.200">
                             <Text fontSize="sm" color="blue.800">
-                              <strong>Tip:</strong> Each quiz should have exactly 5 questions with 4 multiple-choice options. 
-                              Select the correct answer for each question.
+                              <strong>Tip:</strong> Each question must have exactly 5 options.
+                              Click &quot;Set as Correct&quot; to mark the right answer.
                             </Text>
                           </Box>
                         </VStack>
