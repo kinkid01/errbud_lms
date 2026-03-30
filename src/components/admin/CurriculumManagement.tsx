@@ -55,12 +55,14 @@ import {
   FiChevronDown,
   FiClock,
   FiHelpCircle,
+  FiEye,
 } from "react-icons/fi";
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Curriculum, Course } from "@/types/admin";
 import { curriculumApi } from "@/lib/curriculumApi";
 import CurriculumForm from "./CurriculumForm";
 import QuizManager from "./QuizManager";
+import LessonPreviewModal from "./LessonPreviewModal";
 
 interface CurriculumManagementProps {
   course: Course;
@@ -77,6 +79,7 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
   const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isManagingQuiz, setIsManagingQuiz] = useState(false);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   const { isOpen: isFormModalOpen, onOpen: onFormModalOpen, onClose: onFormModalClose } = useDisclosure();
   const { isOpen: isDeleteAlertOpen, onOpen: onDeleteAlertOpen, onClose: onDeleteAlertClose } = useDisclosure();
@@ -123,6 +126,11 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
   const handleManageQuiz = (curriculum: Curriculum) => {
     setSelectedCurriculum(curriculum);
     setIsManagingQuiz(true);
+  };
+
+  const handlePreview = (curriculum: Curriculum) => {
+    setSelectedCurriculum(curriculum);
+    setIsPreviewOpen(true);
   };
 
   const confirmDelete = async () => {
@@ -362,6 +370,14 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
                         </Button>
                         <Button
                           size="sm"
+                          onClick={() => handlePreview(curriculum)}
+                          colorScheme="purple"
+                          variant="outline"
+                        >
+                          <FiEye /> Preview
+                        </Button>
+                        <Button
+                          size="sm"
                           onClick={() => handleEditCurriculum(curriculum)}
                           colorScheme="blue"
                           variant="outline"
@@ -453,6 +469,15 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
           courseId={course.id}
           onSubmit={handleFormSubmit}
         />
+
+        {/* Lesson Preview Modal */}
+        {selectedCurriculum && (
+          <LessonPreviewModal
+            isOpen={isPreviewOpen}
+            onClose={() => setIsPreviewOpen(false)}
+            curriculum={selectedCurriculum}
+          />
+        )}
 
         {/* Quiz Manager Modal */}
         {selectedCurriculum && (
