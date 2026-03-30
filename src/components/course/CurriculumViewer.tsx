@@ -34,7 +34,7 @@ import {
 import Link from "next/link";
 import api from "@/lib/api";
 
-const READ_TIME = 60; // seconds required per lesson
+const READ_TIME = 30; // seconds required per lesson
 
 interface ViewerLesson {
   id: string;
