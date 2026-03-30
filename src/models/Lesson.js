@@ -5,7 +5,7 @@ const questionSchema = new mongoose.Schema({
   text: { type: String, required: true },
   options: {
     type: [String],
-    validate: [arr => arr.length === 5, 'Each question must have exactly 5 options'],
+    validate: [arr => arr.length === 4, 'Each question must have exactly 4 options'],
   },
   correctAnswer: {
     type: Number, // Index of the correct option (0–4)
