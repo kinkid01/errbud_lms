@@ -9,7 +9,7 @@ const questionSchema = new mongoose.Schema({
   },
   correctAnswer: {
     type: Number, // Index of the correct option (0–4)
-    required: true,
+    default: 0,
   },
 });
 
