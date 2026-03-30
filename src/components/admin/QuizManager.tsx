@@ -71,7 +71,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({
     const newQuestion: Question = {
       id: Date.now().toString(),
       text: "",
-      options: ["", "", "", "", ""],
+      options: ["", "", "", ""],
       correctAnswer: 0,
     };
     setEditingQuestion(newQuestion);
@@ -357,7 +357,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({
 
                           <Box p={3} bg="blue.50" borderRadius="md" border="1px" borderColor="blue.200">
                             <Text fontSize="sm" color="blue.800">
-                              <strong>Tip:</strong> Each question must have exactly 5 options.
+                              <strong>Tip:</strong> Each question has 4 options (A–D).
                               Click &quot;Set as Correct&quot; to mark the right answer.
                             </Text>
                           </Box>

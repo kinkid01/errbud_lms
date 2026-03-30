@@ -33,7 +33,7 @@ import {
 import Link from "next/link";
 import api from "@/lib/api";
 
-const OPTION_LABELS = ["A", "B", "C", "D", "E"];
+const OPTION_LABELS = ["A", "B", "C", "D"];
 const QUIZ_SECONDS = 5 * 60;
 
 interface QuizQuestion {
@@ -209,14 +209,6 @@ function ResultsScreen({ questions, answers, score, passed, onRetry }: {
                             {unanswered ? "Not answered" : `${OPTION_LABELS[userAnswer]}. ${q.options[userAnswer]}`}
                           </strong>
                         </Text>
-                        {!isCorrect && (
-                          <Text fontSize="xs" color="green.600">
-                            Correct answer:{" "}
-                            <strong>
-                              {OPTION_LABELS[q.correctAnswer]}. {q.options[q.correctAnswer]}
-                            </strong>
-                          </Text>
-                        )}
                       </VStack>
                     </HStack>
                   </Box>
