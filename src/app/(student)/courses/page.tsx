@@ -85,7 +85,7 @@ export default function CoursesPage() {
   const inProgress = Object.values(progressMap).filter((p) => p.status === 'in_progress').length;
 
   return (
-    <Box p={8}>
+    <Box p={{ base: 4, md: 8 }}>
       <VStack spacing={6} align="stretch">
         <Box>
           <Heading size="lg" color="gray.800" mb={1}>Modules</Heading>

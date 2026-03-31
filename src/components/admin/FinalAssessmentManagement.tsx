@@ -289,7 +289,7 @@ export default function FinalAssessmentManagement({ course, onBack }: FinalAsses
 
   if (isLoading) {
     return (
-      <Box p={8}>
+      <Box p={{ base: 4, md: 8 }}>
         <VStack spacing={4} align="center">
           <Text>Loading final assessment...</Text>
         </VStack>

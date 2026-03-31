@@ -253,7 +253,7 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
 
   if (isLoading) {
     return (
-      <Box p={8}>
+      <Box p={{ base: 4, md: 8 }}>
         <VStack spacing={4} align="center">
           <Text>Loading lessons...</Text>
         </VStack>

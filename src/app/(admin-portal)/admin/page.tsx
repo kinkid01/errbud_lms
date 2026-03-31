@@ -135,7 +135,7 @@ export default function AdminDashboard() {
   }
 
   return (
-    <Box p={8}>
+    <Box p={{ base: 4, md: 8 }}>
       <VStack spacing={8} align="stretch">
         {/* Header */}
         <Box>
@@ -174,8 +174,8 @@ export default function AdminDashboard() {
                 No students have enrolled yet.
               </Text>
             ) : (
-              <TableContainer>
-                <Table variant="simple" size="sm">
+              <TableContainer overflowX="auto">
+                <Table variant="simple" size="sm" minW="500px">
                   <Thead>
                     <Tr>
                       <Th color="gray.400" fontSize="xs" textTransform="uppercase">Student</Th>

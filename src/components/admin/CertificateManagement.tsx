@@ -96,7 +96,7 @@ export default function CertificateManagement() {
 
   if (isLoading) {
     return (
-      <Box p={8}>
+      <Box p={{ base: 4, md: 8 }}>
         <Text>Loading certificates...</Text>
       </Box>
     );

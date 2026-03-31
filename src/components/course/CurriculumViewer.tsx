@@ -30,6 +30,8 @@ import {
   FiAward,
   FiChevronRight,
   FiClock,
+  FiList,
+  FiX,
 } from "react-icons/fi";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -55,6 +57,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
   const [activeIndex, setActiveIndex] = useState(0);
   const [timeLeft, setTimeLeft] = useState(READ_TIME);
   const [hasQuiz, setHasQuiz] = useState(false);
+  const [lessonDrawerOpen, setLessonDrawerOpen] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // ── Load lessons + restore progress from backend ──────────────────────────
@@ -197,7 +200,17 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
   const timerPct = Math.round(((READ_TIME - timeLeft) / READ_TIME) * 100);
 
   return (
-    <Flex h="100%" minH="0" overflow="hidden">
+    <Flex h="100%" minH="0" overflow="hidden" position="relative">
+      {/* Mobile backdrop for lesson drawer */}
+      <Box
+        display={{ base: lessonDrawerOpen ? "block" : "none", md: "none" }}
+        position="fixed"
+        inset={0}
+        bg="blackAlpha.600"
+        zIndex={99}
+        onClick={() => setLessonDrawerOpen(false)}
+      />
+
       {/* ── Left sidebar ── */}
       <Box
         w="280px"
@@ -207,7 +220,34 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
         borderColor="gray.100"
         overflowY="auto"
         py={6}
+        position={{ base: "fixed", md: "relative" }}
+        left={{ base: lessonDrawerOpen ? "0px" : "-280px", md: "auto" }}
+        top={0}
+        h={{ base: "100vh", md: "100%" }}
+        zIndex={{ base: 100, md: 1 }}
+        transition="left 0.2s ease"
       >
+        {/* Mobile close button for lesson drawer */}
+        <Flex
+          display={{ base: "flex", md: "none" }}
+          justify="space-between"
+          align="center"
+          px={5}
+          mb={4}
+        >
+          <Text fontSize="sm" fontWeight="semibold" color="gray.700">Lessons</Text>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setLessonDrawerOpen(false)}
+            p={1}
+            color="gray.400"
+            _hover={{ color: "gray.700" }}
+          >
+            <Icon as={FiX} boxSize={4} />
+          </Button>
+        </Flex>
+
         <Box px={5} mb={5}>
           <HStack justify="space-between" mb={2}>
             <Text
@@ -338,7 +378,21 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
       </Box>
 
       {/* ── Main content ── */}
-      <Box flex={1} overflowY="auto" bg="gray.50" p={8}>
+      <Box flex={1} overflowY="auto" bg="gray.50" p={{ base: 4, md: 8 }}>
+        {/* Mobile: toggle lessons button */}
+        <Button
+          display={{ base: "flex", md: "none" }}
+          size="sm"
+          variant="outline"
+          colorScheme="blue"
+          leftIcon={<Icon as={FiList} />}
+          onClick={() => setLessonDrawerOpen(true)}
+          mb={4}
+          borderRadius="xl"
+        >
+          Lessons ({completedCount}/{lessons.length})
+        </Button>
+
         <Box maxW="780px" mx="auto">
           <HStack spacing={1} mb={6} color="gray.400" fontSize="sm">
             <Text>Module</Text>
@@ -349,7 +403,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
           </HStack>
 
           <Card borderRadius="2xl" boxShadow="sm" overflow="hidden" mb={6}>
-            <CardBody p={8}>
+            <CardBody p={{ base: 4, md: 8 }}>
               <VStack spacing={6} align="stretch">
                 <HStack justify="space-between" align="start">
                   <Box>

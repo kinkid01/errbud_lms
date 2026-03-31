@@ -172,7 +172,7 @@ export default function UserManagement() {
 
   if (isLoading) {
     return (
-      <Box p={8}>
+      <Box p={{ base: 4, md: 8 }}>
         <VStack spacing={4} align="center">
           <Text>Loading users...</Text>
         </VStack>
@@ -181,7 +181,7 @@ export default function UserManagement() {
   }
 
   return (
-    <Box p={8}>
+    <Box p={{ base: 4, md: 8 }}>
       <VStack spacing={8} align="stretch">
         {/* Header */}
         <Flex align="center" justify="space-between" flexWrap="wrap" gap={3}>
@@ -195,8 +195,8 @@ export default function UserManagement() {
         </Flex>
 
         {/* Stats Overview */}
-        <HStack spacing={6}>
-          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
+        <Flex gap={4} flexWrap="wrap">
+          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg" flex="1" minW="140px">
             <CardBody p={4}>
               <HStack spacing={3}>
                 <Icon as={FiUsers} boxSize={8} color="blue.500" />
@@ -208,7 +208,7 @@ export default function UserManagement() {
             </CardBody>
           </Card>
 
-          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
+          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg" flex="1" minW="140px">
             <CardBody p={4}>
               <HStack spacing={3}>
                 <Icon as={FiTrendingUp} boxSize={8} color="green.500" />
@@ -220,7 +220,7 @@ export default function UserManagement() {
             </CardBody>
           </Card>
 
-          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
+          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg" flex="1" minW="140px">
             <CardBody p={4}>
               <HStack spacing={3}>
                 <Icon as={FiCalendar} boxSize={8} color="purple.500" />
@@ -233,12 +233,12 @@ export default function UserManagement() {
               </HStack>
             </CardBody>
           </Card>
-        </HStack>
+        </Flex>
 
         {/* Filters */}
         <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
           <CardBody p={4}>
-            <HStack spacing={4}>
+            <Flex gap={3} direction={{ base: "column", sm: "row" }}>
               <Box flex={1}>
                 <InputGroup>
                   <InputLeftElement>
@@ -254,20 +254,20 @@ export default function UserManagement() {
               <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                w="200px"
+                w={{ base: "full", sm: "200px" }}
               >
                 <option value="all">All Users</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </Select>
-            </HStack>
+            </Flex>
           </CardBody>
         </Card>
 
         {/* Users Table */}
         <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
-          <CardBody p={0}>
-            <Table variant="simple">
+          <CardBody p={0} overflowX="auto">
+            <Table variant="simple" minW="700px">
               <Thead>
                 <Tr>
                   <Th>User</Th>

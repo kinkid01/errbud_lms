@@ -95,7 +95,7 @@ export default function StudentDashboard() {
   }
 
   return (
-    <Box p={8}>
+    <Box p={{ base: 4, md: 8 }}>
       <VStack spacing={8} align="stretch">
         {/* Header */}
         <Box>

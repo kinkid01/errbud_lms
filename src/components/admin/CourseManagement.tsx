@@ -227,7 +227,7 @@ export default function CourseManagement() {
 
   if (isLoading) {
     return (
-      <Box p={8}>
+      <Box p={{ base: 4, md: 8 }}>
         <VStack spacing={4} align="center">
           <Text>Loading modules...</Text>
         </VStack>
@@ -236,29 +236,32 @@ export default function CourseManagement() {
   }
 
   return (
-    <Box p={8}>
-      <VStack spacing={8} align="stretch">
+    <Box p={{ base: 4, md: 8 }}>
+      <VStack spacing={6} align="stretch">
         {/* Header */}
-        <Flex justify="space-between" align="center">
+        <Flex justify="space-between" align={{ base: "flex-start", sm: "center" }} direction={{ base: "column", sm: "row" }} gap={3}>
           <Box>
-            <Heading size="lg" mb={2}>Module Management</Heading>
-            <Text color="gray.600">Create, edit, and manage module content</Text>
+            <Heading size="lg" mb={1}>Module Management</Heading>
+            <Text color="gray.600" fontSize="sm">Create, edit, and manage module content</Text>
           </Box>
           <Button
             leftIcon={<FiPlus />}
             colorScheme="blue"
             onClick={handleCreateCourse}
+            borderRadius="xl"
+            flexShrink={0}
+            w={{ base: "full", sm: "auto" }}
           >
             Create New Module
           </Button>
         </Flex>
 
         {/* Stats Overview */}
-        <HStack spacing={6}>
-          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
+        <Flex gap={4} flexWrap="wrap">
+          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg" flex="1" minW="130px">
             <CardBody p={4}>
               <HStack spacing={3}>
-                <Icon as={FiBook} boxSize={8} color="blue.500" />
+                <Icon as={FiBook} boxSize={7} color="blue.500" />
                 <Stat>
                   <StatLabel fontSize="sm">Total Modules</StatLabel>
                   <StatNumber fontSize="lg">{courses.length}</StatNumber>
@@ -267,10 +270,10 @@ export default function CourseManagement() {
             </CardBody>
           </Card>
 
-          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
+          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg" flex="1" minW="130px">
             <CardBody p={4}>
               <HStack spacing={3}>
-                <Icon as={FiEye} boxSize={8} color="green.500" />
+                <Icon as={FiEye} boxSize={7} color="green.500" />
                 <Stat>
                   <StatLabel fontSize="sm">Active Modules</StatLabel>
                   <StatNumber fontSize="lg">{courses.filter(c => c.status === 'active').length}</StatNumber>
@@ -279,10 +282,10 @@ export default function CourseManagement() {
             </CardBody>
           </Card>
 
-          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
+          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg" flex="1" minW="130px">
             <CardBody p={4}>
               <HStack spacing={3}>
-                <Icon as={FiClock} boxSize={8} color="purple.500" />
+                <Icon as={FiClock} boxSize={7} color="purple.500" />
                 <Stat>
                   <StatLabel fontSize="sm">Total Hours</StatLabel>
                   <StatNumber fontSize="lg">{courses.reduce((acc, c) => acc + c.duration, 0)}</StatNumber>
@@ -290,19 +293,19 @@ export default function CourseManagement() {
               </HStack>
             </CardBody>
           </Card>
-        </HStack>
+        </Flex>
 
         {/* Filters */}
         <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
           <CardBody p={4}>
-            <HStack spacing={4}>
+            <Flex gap={3} direction={{ base: "column", sm: "row" }}>
               <Box flex={1}>
                 <InputGroup>
                   <InputLeftElement>
                     <Icon as={FiSearch} color="gray.400" />
                   </InputLeftElement>
                   <Input
-                    placeholder="Search modules by title or description..."
+                    placeholder="Search modules..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                   />
@@ -311,20 +314,20 @@ export default function CourseManagement() {
               <Select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as any)}
-                w="200px"
+                w={{ base: "full", sm: "180px" }}
               >
                 <option value="all">All Modules</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </Select>
-            </HStack>
+            </Flex>
           </CardBody>
         </Card>
 
         {/* Courses Table */}
         <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg">
-          <CardBody p={0}>
-            <Table variant="simple">
+          <CardBody p={0} overflowX="auto">
+            <Table variant="simple" minW="600px">
               <Thead>
                 <Tr>
                   <Th>Module</Th>
@@ -339,19 +342,21 @@ export default function CourseManagement() {
                 {filteredCourses.map((course) => (
                   <Tr key={course.id}>
                     <Td>
-                      <HStack spacing={3}>
-                        <Box
-                          w="10"
-                          h="10"
+                      <HStack spacing={3} align="center">
+                        <Flex
+                          w="36px"
+                          h="36px"
+                          minW="36px"
+                          minH="36px"
                           borderRadius="lg"
                           bg="blue.500"
-                          display="flex"
-                          alignItems="center"
-                          justifyContent="center"
+                          align="center"
+                          justify="center"
                           color="white"
+                          flexShrink={0}
                         >
-                          <Icon as={FiBook} />
-                        </Box>
+                          <Icon as={FiBook} boxSize={4} />
+                        </Flex>
                         <Text fontWeight="medium">{course.title}</Text>
                       </HStack>
                     </Td>
@@ -376,8 +381,9 @@ export default function CourseManagement() {
                           onClick={() => setManagingCourse(course)}
                           colorScheme="green"
                           variant="outline"
+                          px={{ base: 2, md: 3 }}
                         >
-                          Lessons
+                          <Text display={{ base: "none", lg: "inline" }}>Lessons</Text>
                         </Button>
                         <Button
                           size="sm"
@@ -385,8 +391,9 @@ export default function CourseManagement() {
                           onClick={() => handleEditCourse(course)}
                           colorScheme="blue"
                           variant="outline"
+                          px={{ base: 2, md: 3 }}
                         >
-                          Edit
+                          <Text display={{ base: "none", lg: "inline" }}>Edit</Text>
                         </Button>
                         <Button
                           size="sm"
@@ -394,8 +401,9 @@ export default function CourseManagement() {
                           onClick={() => handleDeleteCourse(course)}
                           colorScheme="red"
                           variant="outline"
+                          px={{ base: 2, md: 3 }}
                         >
-                          Delete
+                          <Text display={{ base: "none", lg: "inline" }}>Delete</Text>
                         </Button>
                       </HStack>
                     </Td>

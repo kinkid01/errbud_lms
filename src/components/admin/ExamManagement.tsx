@@ -155,7 +155,7 @@ export default function ExamManagement() {
   }
 
   return (
-    <Box p={8}>
+    <Box p={{ base: 4, md: 8 }}>
       <VStack spacing={6} align="stretch">
 
         {/* Header */}
