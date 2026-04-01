@@ -43,7 +43,6 @@ const CourseForm: React.FC<CourseFormProps> = ({
   const [formData, setFormData] = useState({
     title: "",
     description: "",
-    duration: 40,
     status: "active" as "active" | "inactive",
     coverImage: "",
   });
@@ -56,7 +55,6 @@ const CourseForm: React.FC<CourseFormProps> = ({
         setFormData({
           title: course.title,
           description: course.description,
-          duration: course.duration,
           status: course.status,
           coverImage: course.coverImage || "",
         });
@@ -64,7 +62,6 @@ const CourseForm: React.FC<CourseFormProps> = ({
         setFormData({
           title: "",
           description: "",
-          duration: 40,
           status: "active",
           coverImage: "",
         });
@@ -143,29 +140,16 @@ const CourseForm: React.FC<CourseFormProps> = ({
                 />
               </FormControl>
 
-              <HStack spacing={4}>
-                <FormControl isRequired>
-                  <FormLabel>Duration (hours)</FormLabel>
-                  <Input
-                    type="number"
-                    value={formData.duration}
-                    onChange={(e) => handleChange("duration", parseInt(e.target.value) || 0)}
-                    placeholder="Duration in hours"
-                    min={1}
-                  />
-                </FormControl>
-
-                <FormControl isRequired>
-                  <FormLabel>Status</FormLabel>
-                  <Select
-                    value={formData.status}
-                    onChange={(e) => handleChange("status", e.target.value)}
-                  >
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </Select>
-                </FormControl>
-              </HStack>
+              <FormControl isRequired>
+                <FormLabel>Status</FormLabel>
+                <Select
+                  value={formData.status}
+                  onChange={(e) => handleChange("status", e.target.value)}
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </Select>
+              </FormControl>
 
               {formData.coverImage && (
                 <Box>

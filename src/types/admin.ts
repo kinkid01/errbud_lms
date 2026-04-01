@@ -14,7 +14,6 @@ export interface Course {
   title: string;
   description: string;
   coverImage?: string;
-  duration: number; // in hours
   status: 'active' | 'inactive';
   createdAt: string;
   updatedAt: string;
@@ -29,6 +28,7 @@ export interface Curriculum {
   content: string;
   visualContent?: string; // image or video URL
   order: number;
+  duration: number; // timer in seconds
   quiz: Quiz;
 }
 

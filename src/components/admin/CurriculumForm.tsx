@@ -43,6 +43,7 @@ interface CurriculumFormData {
   visualContent: string;
   courseId: string;
   order: number;
+  duration: number;
   quiz: Quiz;
 }
 
@@ -77,6 +78,7 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
     visualContent: "",
     courseId: courseId,
     order: 1,
+    duration: 30,
     quiz: {
       id: "",
       curriculumId: "",
@@ -97,6 +99,7 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
           visualContent: curriculum.visualContent || "",
           courseId: curriculum.courseId,
           order: curriculum.order,
+          duration: curriculum.duration ?? 30,
           quiz: curriculum.quiz,
         });
         setImages(parseImages(curriculum.visualContent));
@@ -108,6 +111,7 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
           visualContent: "",
           courseId: courseId,
           order: 1,
+          duration: 30,
           quiz: {
             id: "",
             curriculumId: "",
@@ -327,6 +331,17 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
                     </Box>
                   )}
                 </VStack>
+              </FormControl>
+
+              <FormControl isRequired>
+                <FormLabel>Lesson Timer (seconds)</FormLabel>
+                <Input
+                  type="number"
+                  value={formData.duration}
+                  onChange={(e) => handleChange("duration", parseInt(e.target.value) || 30)}
+                  placeholder="Timer duration in seconds"
+                  min={1}
+                />
               </FormControl>
 
               <FormControl>

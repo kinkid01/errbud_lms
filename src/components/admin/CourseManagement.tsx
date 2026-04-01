@@ -58,7 +58,6 @@ import {
   FiPlus,
   FiEdit,
   FiTrash2,
-  FiClock,
   FiEye,
   FiLayers,
 } from "react-icons/fi";
@@ -282,17 +281,6 @@ export default function CourseManagement() {
             </CardBody>
           </Card>
 
-          <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="lg" flex="1" minW="130px">
-            <CardBody p={4}>
-              <HStack spacing={3}>
-                <Icon as={FiClock} boxSize={7} color="purple.500" />
-                <Stat>
-                  <StatLabel fontSize="sm">Total Hours</StatLabel>
-                  <StatNumber fontSize="lg">{courses.reduce((acc, c) => acc + c.duration, 0)}</StatNumber>
-                </Stat>
-              </HStack>
-            </CardBody>
-          </Card>
         </Flex>
 
         {/* Filters */}
@@ -332,7 +320,6 @@ export default function CourseManagement() {
                 <Tr>
                   <Th>Module</Th>
                   <Th>Description</Th>
-                  <Th>Duration</Th>
                   <Th>Status</Th>
                   <Th>Created</Th>
                   <Th>Actions</Th>
@@ -364,12 +351,6 @@ export default function CourseManagement() {
                       <Text noOfLines={2} maxW="300px">
                         {course.description}
                       </Text>
-                    </Td>
-                    <Td>
-                      <HStack spacing={1}>
-                        <Icon as={FiClock} color="gray.400" />
-                        <Text>{course.duration}h</Text>
-                      </HStack>
                     </Td>
                     <Td>{getStatusBadge(course.status)}</Td>
                     <Td>{new Date(course.createdAt).toLocaleDateString()}</Td>

@@ -36,8 +36,6 @@ import {
 import Link from "next/link";
 import api from "@/lib/api";
 
-const READ_TIME = 30; // seconds required per lesson
-
 interface ViewerLesson {
   id: string;
   title: string;
@@ -45,6 +43,7 @@ interface ViewerLesson {
   images: string[];
   isLocked: boolean;
   isCompleted: boolean;
+  duration: number;
 }
 
 interface CurriculumViewerProps {
@@ -55,7 +54,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
   const [lessons, setLessons] = useState<ViewerLesson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeIndex, setActiveIndex] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(READ_TIME);
+  const [timeLeft, setTimeLeft] = useState(30);
   const [hasQuiz, setHasQuiz] = useState(false);
   const [lessonDrawerOpen, setLessonDrawerOpen] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -110,6 +109,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
             })(),
             isCompleted,
             isLocked: !isCompleted && !prevCompleted,
+            duration: lesson.duration ?? 30,
           };
         });
 
@@ -135,7 +135,8 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
       return;
     }
 
-    setTimeLeft(READ_TIME);
+    const lessonDuration = lessons[activeIndex]?.duration ?? 30;
+    setTimeLeft(lessonDuration);
 
     intervalRef.current = setInterval(() => {
       setTimeLeft((prev) => {
@@ -195,9 +196,11 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
     setActiveIndex(index);
   };
 
+  const currentDuration = current?.duration ?? 30;
+  const pctRemaining = currentDuration > 0 ? (timeLeft / currentDuration) * 100 : 0;
   const timerColor =
-    timeLeft > 30 ? "blue.400" : timeLeft > 10 ? "orange.400" : "red.400";
-  const timerPct = Math.round(((READ_TIME - timeLeft) / READ_TIME) * 100);
+    pctRemaining > 60 ? "blue.400" : pctRemaining > 25 ? "orange.400" : "red.400";
+  const timerPct = Math.round(100 - pctRemaining);
 
   return (
     <Flex h="100%" minH="0" overflow="hidden" position="relative">
@@ -597,7 +600,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
                     <Progress
                       value={timerPct}
                       colorScheme={
-                        timeLeft > 30 ? "blue" : timeLeft > 10 ? "orange" : "red"
+                        pctRemaining > 60 ? "blue" : pctRemaining > 25 ? "orange" : "red"
                       }
                       borderRadius="full"
                       size="sm"
