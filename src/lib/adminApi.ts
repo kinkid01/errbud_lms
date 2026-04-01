@@ -8,7 +8,6 @@ function toCourse(doc: any): Course {
     title: n.title,
     description: n.description,
     coverImage: n.coverImage ?? '',
-    duration: n.duration,
     status: n.status,
     createdAt: n.createdAt,
     updatedAt: n.updatedAt,
