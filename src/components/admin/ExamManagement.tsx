@@ -18,11 +18,6 @@ import {
   FormLabel,
   Input,
   Textarea,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
   IconButton,
   Spinner,
   AlertDialog,
@@ -62,6 +57,8 @@ export default function ExamManagement() {
 
   const [passingScore, setPassingScore] = useState(70);
   const [timeLimit, setTimeLimit] = useState(60);
+  const [passingScoreInput, setPassingScoreInput] = useState("70");
+  const [timeLimitInput, setTimeLimitInput] = useState("60");
   const [questions, setQuestions] = useState<Question[]>([]);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
 
@@ -76,6 +73,8 @@ export default function ExamManagement() {
       setQuestions(data?.questions ?? []);
       setPassingScore(data?.passingScore ?? 70);
       setTimeLimit(data?.timeLimit ?? 60);
+      setPassingScoreInput(String(data?.passingScore ?? 70));
+      setTimeLimitInput(String(data?.timeLimit ?? 60));
     } catch {
       toast({ title: "Error loading exam", status: "error", duration: 4000, isClosable: true });
     } finally {
@@ -184,23 +183,33 @@ export default function ExamManagement() {
             <HStack spacing={8}>
               <FormControl maxW="160px">
                 <FormLabel fontSize="sm">Passing Score (%)</FormLabel>
-                <NumberInput value={passingScore} onChange={(v) => setPassingScore(parseInt(v) || 70)} min={0} max={100}>
-                  <NumberInputField />
-                  <NumberInputStepper>
-                    <NumberIncrementStepper />
-                    <NumberDecrementStepper />
-                  </NumberInputStepper>
-                </NumberInput>
+                <Input
+                  type="number"
+                  value={passingScoreInput}
+                  onChange={(e) => setPassingScoreInput(e.target.value)}
+                  onBlur={() => {
+                    const parsed = Math.min(100, Math.max(0, parseInt(passingScoreInput) || 70));
+                    setPassingScoreInput(String(parsed));
+                    setPassingScore(parsed);
+                  }}
+                  min={0}
+                  max={100}
+                />
               </FormControl>
               <FormControl maxW="160px">
                 <FormLabel fontSize="sm">Time Limit (minutes)</FormLabel>
-                <NumberInput value={timeLimit} onChange={(v) => setTimeLimit(parseInt(v) || 60)} min={5} max={300}>
-                  <NumberInputField />
-                  <NumberInputStepper>
-                    <NumberIncrementStepper />
-                    <NumberDecrementStepper />
-                  </NumberInputStepper>
-                </NumberInput>
+                <Input
+                  type="number"
+                  value={timeLimitInput}
+                  onChange={(e) => setTimeLimitInput(e.target.value)}
+                  onBlur={() => {
+                    const parsed = Math.min(300, Math.max(5, parseInt(timeLimitInput) || 60));
+                    setTimeLimitInput(String(parsed));
+                    setTimeLimit(parsed);
+                  }}
+                  min={5}
+                  max={300}
+                />
               </FormControl>
             </HStack>
           </CardBody>
