@@ -440,88 +440,41 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
 
                 <Divider />
 
-                <Box>
-                  {(() => {
-                    const lines = current.content.split('\n');
-                    const elements: React.ReactNode[] = [];
-                    let key = 0;
-                    let i = 0;
-
-                    while (i < lines.length) {
-                      const line = lines[i];
-                      const k = key++;
-
-                      // Empty line → small spacer
-                      if (line.trim() === '') {
-                        elements.push(<Box key={k} h={3} />);
-                        i++;
-                        continue;
-                      }
-
-                      // Bullet line (•, -, *, ·)
-                      if (/^\s*[•\-\*·]\s/.test(line)) {
-                        const bullets: string[] = [];
-                        while (i < lines.length && /^\s*[•\-\*·]\s/.test(lines[i])) {
-                          bullets.push(lines[i].replace(/^\s*[•\-\*·]\s*/, ''));
-                          i++;
-                        }
-                        elements.push(
-                          <Box key={k} mb={3}>
-                            {bullets.map((b, bi) => (
-                              <HStack key={bi} spacing={2} align="start" mb={1}>
-                                <Text color="blue.400" fontSize="md" lineHeight="1.8" flexShrink={0}>•</Text>
-                                <Text color="gray.700" fontSize="md" lineHeight="1.8">{b}</Text>
-                              </HStack>
-                            ))}
-                          </Box>
-                        );
-                        continue;
-                      }
-
-                      // Numbered line (1., 2., etc.)
-                      if (/^\s*\d+\.\s/.test(line)) {
-                        const items: { num: string; text: string }[] = [];
-                        while (i < lines.length && /^\s*\d+\.\s/.test(lines[i])) {
-                          const m = lines[i].match(/^\s*(\d+)\.\s+(.*)/);
-                          if (m) items.push({ num: m[1], text: m[2] });
-                          i++;
-                        }
-                        elements.push(
-                          <Box key={k} mb={3}>
-                            {items.map((item, ii) => (
-                              <HStack key={ii} spacing={2} align="start" mb={1}>
-                                <Text color="blue.500" fontSize="md" lineHeight="1.8" fontWeight="semibold" flexShrink={0}>
-                                  {item.num}.
-                                </Text>
-                                <Text color="gray.700" fontSize="md" lineHeight="1.8">{item.text}</Text>
-                              </HStack>
-                            ))}
-                          </Box>
-                        );
-                        continue;
-                      }
-
-                      // Regular text — collect consecutive lines into one paragraph
-                      const paragraphLines: string[] = [];
-                      while (
-                        i < lines.length &&
-                        lines[i].trim() !== '' &&
-                        !/^\s*[•\-\*·]\s/.test(lines[i]) &&
-                        !/^\s*\d+\.\s/.test(lines[i])
-                      ) {
-                        paragraphLines.push(lines[i]);
-                        i++;
-                      }
-                      elements.push(
-                        <Text key={k} color="gray.700" fontSize="md" lineHeight="1.8" mb={4}>
-                          {paragraphLines.join(' ')}
-                        </Text>
-                      );
-                    }
-
-                    return elements;
-                  })()}
-                </Box>
+                {/* Rich HTML content (new lessons) or plain text fallback (legacy) */}
+                {current.content.trimStart().startsWith('<') ? (
+                  <Box
+                    dangerouslySetInnerHTML={{ __html: current.content }}
+                    sx={{
+                      "h1": { fontSize: "1.5em", fontWeight: "bold", mb: 3, color: "gray.800" },
+                      "h2": { fontSize: "1.25em", fontWeight: "bold", mb: 2, color: "gray.800" },
+                      "h3": { fontSize: "1.1em", fontWeight: "bold", mb: 2, color: "gray.800" },
+                      "p": { color: "gray.700", fontSize: "md", lineHeight: "1.8", mb: 3 },
+                      "ul": { pl: 6, mb: 3, listStyleType: "disc" },
+                      "ol": { pl: 6, mb: 3, listStyleType: "decimal" },
+                      "li": { color: "gray.700", fontSize: "md", lineHeight: "1.8", mb: 1 },
+                      "strong": { fontWeight: "bold" },
+                      "em": { fontStyle: "italic" },
+                      "u": { textDecoration: "underline" },
+                      "blockquote": {
+                        borderLeft: "3px solid",
+                        borderColor: "blue.300",
+                        pl: 4,
+                        color: "gray.500",
+                        fontStyle: "italic",
+                        my: 3,
+                      },
+                    }}
+                  />
+                ) : (
+                  <Text
+                    color="gray.700"
+                    fontSize="md"
+                    lineHeight="1.8"
+                    whiteSpace="pre-wrap"
+                  >
+                    {current.content}
+                  </Text>
+                )}
 
                 {current.images.length > 0 && (
                   <VStack spacing={4} align="stretch">

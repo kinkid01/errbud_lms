@@ -26,6 +26,7 @@ import {
 import { useEffect, useState, useRef } from "react";
 import { FiUpload, FiX, FiImage } from "react-icons/fi";
 import { Curriculum, Quiz } from "@/types/admin";
+import RichTextEditor from "./RichTextEditor";
 
 interface CurriculumFormProps {
   isOpen: boolean;
@@ -243,11 +244,9 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
 
               <FormControl isRequired>
                 <FormLabel>Learning Content</FormLabel>
-                <Textarea
+                <RichTextEditor
                   value={formData.content}
-                  onChange={(e) => handleChange("content", e.target.value)}
-                  placeholder="Enter the learning material for this lesson"
-                  rows={6}
+                  onChange={(val) => handleChange("content", val)}
                 />
               </FormControl>
 
