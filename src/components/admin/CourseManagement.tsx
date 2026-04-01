@@ -23,24 +23,8 @@ import {
   InputLeftElement,
   Select,
   Flex,
-  Spacer,
   useToast,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalFooter,
-  ModalBody,
-  ModalCloseButton,
   useDisclosure,
-  FormControl,
-  FormLabel,
-  Textarea,
-  NumberInput,
-  NumberInputField,
-  NumberInputStepper,
-  NumberIncrementStepper,
-  NumberDecrementStepper,
   AlertDialog,
   AlertDialogBody,
   AlertDialogFooter,
@@ -50,7 +34,6 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-  StatHelpText,
 } from "@chakra-ui/react";
 import {
   FiBook,
@@ -88,7 +71,7 @@ export default function CourseManagement() {
   const loadCourses = useCallback(async () => {
     try {
       const coursesData = await adminApi.getCourses();
-      setCourses(coursesData);
+      setCourses(coursesData.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()));
     } catch (error) {
       toast({
         title: "Error loading modules",

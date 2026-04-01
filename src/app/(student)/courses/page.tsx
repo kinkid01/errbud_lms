@@ -47,7 +47,11 @@ export default function CoursesPage() {
           api.get('/progress/me'),
         ]);
 
-        setModules(modulesRes.data.data.map((m: any) => normalize(m)));
+        setModules(
+          modulesRes.data.data
+            .map((m: any) => normalize(m))
+            .sort((a: Module, b: Module) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
+        );
 
         const map: Record<string, ProgressRecord> = {};
         progressRes.data.data.forEach((p: any) => {
