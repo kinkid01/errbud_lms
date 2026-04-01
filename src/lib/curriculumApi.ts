@@ -11,6 +11,7 @@ function toLesson(doc: any): Curriculum {
     content: n.content,
     visualContent: n.visualContent,
     order: n.order,
+    duration: n.duration ?? 30,
     quiz: n.quiz ?? { id: n.id, curriculumId: n.id, questions: [], passingScore: 60 },
   };
 }
