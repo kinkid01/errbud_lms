@@ -15,11 +15,6 @@ const moduleSchema = new mongoose.Schema(
       type: String,
       default: '',
     },
-    duration: {
-      type: Number, // In hours
-      required: [true, 'Duration is required'],
-      min: 1,
-    },
     status: {
       type: String,
       enum: ['active', 'inactive'],

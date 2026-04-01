@@ -37,6 +37,10 @@ const lessonSchema = new mongoose.Schema(
       type: String, // Image URL shown below lesson content
       default: '',
     },
+    duration: {
+      type: Number, // Reading timer in seconds
+      default: 30,
+    },
     order: {
       type: Number, // Controls the display order within a module
       required: true,
