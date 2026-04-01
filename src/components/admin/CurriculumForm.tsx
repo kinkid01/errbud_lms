@@ -70,6 +70,7 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
   };
 
   const [images, setImages] = useState<string[]>([]);
+  const [durationInput, setDurationInput] = useState("30");
 
   const [formData, setFormData] = useState<CurriculumFormData>({
     title: "",
@@ -102,6 +103,7 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
           duration: curriculum.duration ?? 30,
           quiz: curriculum.quiz,
         });
+        setDurationInput(String(curriculum.duration ?? 30));
         setImages(parseImages(curriculum.visualContent));
       } else {
         setFormData({
@@ -119,6 +121,7 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
             passingScore: 60,
           },
         });
+        setDurationInput("30");
         setImages([]);
       }
     }
@@ -143,6 +146,7 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
     try {
       await onSubmit({
         ...formData,
+        duration: Math.max(1, parseInt(durationInput) || 30),
         visualContent: images.length > 0 ? JSON.stringify(images) : "",
         quiz: {
           ...formData.quiz,
@@ -337,8 +341,12 @@ const CurriculumForm: React.FC<CurriculumFormProps> = ({
                 <FormLabel>Lesson Timer (seconds)</FormLabel>
                 <Input
                   type="number"
-                  value={formData.duration}
-                  onChange={(e) => handleChange("duration", parseInt(e.target.value) || 30)}
+                  value={durationInput}
+                  onChange={(e) => setDurationInput(e.target.value)}
+                  onBlur={() => {
+                    const parsed = Math.max(1, parseInt(durationInput) || 30);
+                    setDurationInput(String(parsed));
+                  }}
                   placeholder="Timer duration in seconds"
                   min={1}
                 />
