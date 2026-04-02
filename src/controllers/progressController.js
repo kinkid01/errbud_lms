@@ -79,13 +79,12 @@ const completeLessonAndSubmitQuiz = async (req, res) => {
     const lp = progress.lessonProgress.find((l) => l.lessonId.toString() === lessonId);
     if (!lp) return res.status(404).json({ success: false, message: 'Lesson not found in progress' });
 
-    lp.attempts += 1;
-    lp.quizScore = quizScore;
+    lp.status = 'completed';
+    lp.completedAt = new Date();
 
-    // Only mark as completed if quiz score meets the passing threshold
-    if (quizScore >= lesson.quiz.passingScore) {
-      lp.status = 'completed';
-      lp.completedAt = new Date();
+    if (req.body.quizScore !== undefined) {
+      lp.quizScore = quizScore;
+      lp.attempts = (lp.attempts || 0) + 1;
     }
 
     // Check if all lessons are now completed → mark the whole module as completed
