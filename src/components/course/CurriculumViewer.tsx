@@ -187,7 +187,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
     );
     // Save to backend (fire-and-forget; UI is already updated)
     api
-      .put(`/progress/lesson/${current.id}/complete`, { quizScore: 100 })
+      .put(`/progress/lesson/${current.id}/complete`, {})
       .catch(() => {});
   };
 

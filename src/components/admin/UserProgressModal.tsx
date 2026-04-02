@@ -63,11 +63,13 @@ const UserProgressModal: React.FC<UserProgressModalProps> = ({
   const completedCourses = userProgress.filter(p => p.status === 'completed').length;
   const inProgressCourses = userProgress.filter(p => p.status === 'in_progress').length;
   const allQuizScores = userProgress.flatMap(p =>
-    p.curriculumProgress.filter(c => c.quizScore != null).map(c => c.quizScore as number)
+    p.curriculumProgress
+      .filter(c => c.quizScore != null && c.attempts > 0)
+      .map(c => c.quizScore as number)
   );
   const averageScore = allQuizScores.length > 0
     ? allQuizScores.reduce((acc, s) => acc + s, 0) / allQuizScores.length
-    : 0;
+    : null;
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -142,7 +144,7 @@ const UserProgressModal: React.FC<UserProgressModalProps> = ({
                   <Icon as={FiTrendingUp} boxSize={8} color="purple.500" />
                   <Stat>
                     <StatLabel fontSize="sm">Avg Score</StatLabel>
-                    <StatNumber fontSize="lg">{averageScore.toFixed(1)}%</StatNumber>
+                    <StatNumber fontSize="lg">{averageScore !== null ? `${averageScore.toFixed(1)}%` : "N/A"}</StatNumber>
                   </Stat>
                 </HStack>
               </Box>

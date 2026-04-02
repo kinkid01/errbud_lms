@@ -233,15 +233,18 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
   const [timeLeft, setTimeLeft] = useState(QUIZ_SECONDS);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const handleSubmitRef = useRef<(() => void) | null>(null);
+  const lessonIdsWithQuiz = useRef<string[]>([]);
 
   useEffect(() => {
     api.get(`/lessons/module/${courseId}`)
       .then((res) => {
         const lessons: any[] = res.data.data;
         const allQuestions: QuizQuestion[] = [];
+        const lessonIds: string[] = [];
 
         for (const lesson of lessons) {
           if (lesson.quiz?.questions?.length) {
+            lessonIds.push(String(lesson._id ?? lesson.id));
             for (const q of lesson.quiz.questions) {
               allQuestions.push({
                 id: String(q._id ?? Math.random()),
@@ -254,6 +257,7 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
           }
         }
 
+        lessonIdsWithQuiz.current = lessonIds;
         setQuestions(allQuestions);
         setAnswers(new Array(allQuestions.length).fill(-1));
       })
@@ -283,8 +287,16 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
     const correct = questions.reduce(
       (acc, q, i) => acc + (answers[i] === q.correctAnswer ? 1 : 0), 0
     );
-    setScore(questions.length > 0 ? (correct / questions.length) * 100 : 0);
+    const finalScore = questions.length > 0 ? (correct / questions.length) * 100 : 0;
+    setScore(finalScore);
     setSubmitted(true);
+
+    // Save quiz score to backend for each lesson that had quiz questions
+    for (const lessonId of lessonIdsWithQuiz.current) {
+      api
+        .put(`/progress/lesson/${lessonId}/complete`, { quizScore: Math.round(finalScore) })
+        .catch(() => {});
+    }
   };
 
   useEffect(() => {
