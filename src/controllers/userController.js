@@ -1,5 +1,5 @@
 const User = require('../models/User');
-const { generateVerificationToken, sendVerificationEmail } = require('../utils/emailService');
+const { generateVerificationToken, sendVerificationEmail } = require('../utils/emailServiceSendGrid');
 
 // Generate a random 8-character password (no ambiguous chars)
 function generatePassword() {
