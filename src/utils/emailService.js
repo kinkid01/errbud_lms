@@ -8,29 +8,32 @@ const generateVerificationToken = () => {
 
 // Create email transporter
 const createTransporter = () => {
-  // Use Ethereal for testing on Railway (bypasses network restrictions)
-  if (process.env.NODE_ENV === 'production') {
-    return nodemailer.createTransport({
-      host: 'smtp.ethereal.email',
-      port: 587,
-      auth: {
-        user: process.env.ETHEREAL_USER || 'ethereal.test@ethereal.email',
-        pass: process.env.ETHEREAL_PASS || 'ethereal_password',
-      },
-    });
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      // Use Ethereal for Railway production
+      return nodemailer.createTransport({
+        host: 'smtp.ethereal.email',
+        port: 587,
+        secure: false,
+        auth: {
+          user: process.env.ETHEREAL_USER || 'p3zwyzl6742566tu@ethereal.email',
+          pass: process.env.ETHEREAL_PASS || 'TkWVjETz66X2a8wyH3',
+        },
+      });
+    } else {
+      // Use Gmail for local development
+      return nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS,
+        },
+      });
+    }
+  } catch (error) {
+    console.error('Failed to create email transporter:', error);
+    return null;
   }
-  
-  // Use Gmail for local development
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
 };
 
 // Send verification email
@@ -44,18 +47,11 @@ const sendVerificationEmail = async (user, password) => {
 
     const transporter = createTransporter();
     
-    // Test connection before sending
-    await new Promise((resolve, reject) => {
-      transporter.verify((error, success) => {
-        if (error) {
-          console.error('Email transporter verification failed:', error.message);
-          reject(error);
-        } else {
-          console.log('Email transporter verified successfully');
-          resolve(success);
-        }
-      });
-    });
+    // Check if transporter was created successfully
+    if (!transporter) {
+      console.error('Failed to create email transporter');
+      return false;
+    }
     
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${user.emailVerificationToken}`;
     
