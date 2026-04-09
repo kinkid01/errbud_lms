@@ -8,6 +8,19 @@ const generateVerificationToken = () => {
 
 // Create email transporter
 const createTransporter = () => {
+  // Use Ethereal for testing on Railway (bypasses network restrictions)
+  if (process.env.NODE_ENV === 'production') {
+    return nodemailer.createTransport({
+      host: 'smtp.ethereal.email',
+      port: 587,
+      auth: {
+        user: process.env.ETHEREAL_USER || 'ethereal.test@ethereal.email',
+        pass: process.env.ETHEREAL_PASS || 'ethereal_password',
+      },
+    });
+  }
+  
+  // Use Gmail for local development
   return nodemailer.createTransport({
     service: 'gmail',
     auth: {
@@ -17,9 +30,6 @@ const createTransporter = () => {
     tls: {
       rejectUnauthorized: false,
     },
-    connectionTimeout: 60000,
-    greetingTimeout: 30000,
-    socketTimeout: 60000,
   });
 };
 
