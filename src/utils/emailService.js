@@ -9,6 +9,7 @@ const generateVerificationToken = () => {
 // Create email transporter
 const createTransporter = () => {
   return nodemailer.createTransport({
+    service: 'gmail',
     host: process.env.EMAIL_HOST,
     port: process.env.EMAIL_PORT,
     secure: process.env.EMAIL_SECURE === 'true',
@@ -16,6 +17,12 @@ const createTransporter = () => {
       user: process.env.EMAIL_USER,
       pass: process.env.EMAIL_PASS,
     },
+    tls: {
+      rejectUnauthorized: false,
+    },
+    connectionTimeout: 60000,
+    greetingTimeout: 30000,
+    socketTimeout: 60000,
   });
 };
 
@@ -23,12 +30,25 @@ const createTransporter = () => {
 const sendVerificationEmail = async (user, password) => {
   try {
     // Validate required environment variables
-    if (!process.env.EMAIL_HOST || !process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error('Email configuration missing. Check environment variables.');
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+      console.error('Email configuration missing. Check EMAIL_USER and EMAIL_PASS.');
       return false;
     }
 
     const transporter = createTransporter();
+    
+    // Test connection before sending
+    await new Promise((resolve, reject) => {
+      transporter.verify((error, success) => {
+        if (error) {
+          console.error('Email transporter verification failed:', error.message);
+          reject(error);
+        } else {
+          console.log('Email transporter verified successfully');
+          resolve(success);
+        }
+      });
+    });
     
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email/${user.emailVerificationToken}`;
     
