@@ -19,46 +19,65 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      return res.status(404).json({ success: false, message: 'No account found with that email address.' });
     }
 
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
-      return res.status(401).json({ success: false, message: 'Invalid email or password' });
+      return res.status(401).json({ success: false, message: 'Incorrect email or password.' });
     }
 
-    // Check if email is verified
-    if (!user.emailVerified) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Please verify your email before logging in' 
+    // Skip verification checks for admins
+    if (user.role === 'admin') {
+      user.lastLogin = new Date();
+      await user.save({ validateBeforeSave: false });
+
+      const token = signToken(user._id);
+      return res.status(200).json({ 
+        success: true,
+        token, 
+        user: { 
+          id: user._id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          phone: user.phone,
+          avatar: user.avatar,
+        } 
       });
     }
 
-    // Check if account is active
-    if (!user.isAccountActive) {
-      return res.status(403).json({ 
-        success: false, 
-        message: 'Account is not active. Please contact administrator' 
-      });
+    // For students, check verification and activation
+    if (user.role === 'student') {
+      if (!user.emailVerified) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'Please verify your email before logging in.' 
+        });
+      }
+      if (!user.isAccountActive) {
+        return res.status(401).json({ 
+          success: false,
+          message: 'Account is not active. Please contact administrator.' 
+        });
+      }
     }
 
     user.lastLogin = new Date();
     await user.save({ validateBeforeSave: false });
 
     const token = signToken(user._id);
-
-    res.status(200).json({
+    return res.status(200).json({ 
       success: true,
-      token,
-      user: {
+      token, 
+      user: { 
         id: user._id,
         name: user.name,
         email: user.email,
         role: user.role,
         phone: user.phone,
         avatar: user.avatar,
-      },
+      } 
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
