@@ -42,6 +42,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({
     setTheme((prevTheme) => (prevTheme === "light" ? "dark" : "light"));
   };
 
+  // Show loading state while theme is being initialized to prevent hydration issues
+  if (!isInitialized) {
+    return (
+      <div style={{ visibility: 'hidden' }}>
+        {children}
+      </div>
+    );
+  }
+
   return (
     <ThemeContext.Provider value={{ theme, toggleTheme }}>
       {children}

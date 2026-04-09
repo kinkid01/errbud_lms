@@ -7,6 +7,8 @@ export interface User {
   createdAt: string;
   lastLogin?: string;
   generatedPassword?: string;
+  emailVerified?: boolean;
+  isAccountActive?: boolean;
 }
 
 export interface Course {

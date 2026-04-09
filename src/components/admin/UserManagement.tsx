@@ -42,13 +42,14 @@ import {
 import {
   FiUsers,
   FiSearch,
-  FiEye,
   FiMail,
   FiCalendar,
   FiTrendingUp,
   FiUserPlus,
   FiCopy,
   FiKey,
+  FiEye,
+  FiEyeOff,
 } from "react-icons/fi";
 import { useEffect, useState, useCallback } from "react";
 import { User, UserProgress } from "@/types/admin";
@@ -74,6 +75,7 @@ export default function UserManagement() {
   const [createForm, setCreateForm] = useState({ name: "", email: "" });
   const [isCreating, setIsCreating] = useState(false);
   const [createdStudent, setCreatedStudent] = useState<{ name: string; email: string; generatedPassword: string } | null>(null);
+  const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
 
   const loadUsers = useCallback(async () => {
     try {
@@ -143,18 +145,75 @@ export default function UserManagement() {
     }
     setIsCreating(true);
     try {
+      console.log('Creating student:', { name: createForm.name, email: createForm.email });
       const result = await adminApi.createStudent(createForm.name.trim(), createForm.email.trim());
+      console.log('Student created successfully:', result);
       setCreatedStudent(result);
       setCreateForm({ name: "", email: "" });
       await loadUsers();
     } catch (err: any) {
+      console.error('Create student error:', err);
+      console.error('Error response:', err.response?.data);
       toast({ title: "Failed to create student", description: err.response?.data?.message ?? err.message, status: "error", duration: 4000 });
     } finally {
       setIsCreating(false);
     }
   };
 
-  const getStatusBadge = (user: User) => {
+  const handleResendVerificationEmail = async (email: string) => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/send-verification-email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        toast({
+          title: "Verification email sent!",
+          description: `Email sent to ${email}`,
+          status: "success",
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        throw new Error(data.message || "Failed to send verification email");
+      }
+    } catch (err: any) {
+      toast({
+        title: "Failed to resend",
+        description: err.message || "Unable to send verification email",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const togglePasswordVisibility = (userId: string) => {
+    setVisiblePasswords(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
+  };
+
+  const getVerificationStatusBadge = (user: User) => {
+    if (user.emailVerified && user.isAccountActive) {
+      return <Badge colorScheme="green">Verified & Active</Badge>;
+    } else if (!user.emailVerified) {
+      return <Badge colorScheme="orange">Email Pending</Badge>;
+    } else if (!user.isAccountActive) {
+      return <Badge colorScheme="red">Inactive</Badge>;
+    }
+    return <Badge colorScheme="gray">Unknown</Badge>;
+  };
+
+  const getActivityStatusBadge = (user: User) => {
+    if (!user.emailVerified || !user.isAccountActive) {
+      return <Badge colorScheme="gray">Not Active</Badge>;
+    }
+    
     if (user.lastLogin) {
       const lastLoginDate = new Date(user.lastLogin);
       const daysSinceLogin = Math.floor((Date.now() - lastLoginDate.getTime()) / (1000 * 60 * 60 * 24));
@@ -273,7 +332,8 @@ export default function UserManagement() {
                   <Th>User</Th>
                   <Th>Email</Th>
                   <Th>Password</Th>
-                  <Th>Status</Th>
+                  <Th>Verification</Th>
+                  <Th>Activity</Th>
                   <Th>Joined</Th>
                   <Th>Last Login</Th>
                   <Th>Actions</Th>
@@ -310,7 +370,21 @@ export default function UserManagement() {
                       {user.generatedPassword ? (
                         <HStack spacing={2}>
                           <Icon as={FiKey} color="gray.400" boxSize={3} />
-                          <Text fontFamily="mono" fontSize="xs" color="gray.600">{user.generatedPassword}</Text>
+                          <Text 
+                            fontFamily="mono" 
+                            fontSize="xs" 
+                            color="gray.600"
+                            userSelect={visiblePasswords[user.id] ? "text" : "none"}
+                          >
+                            {visiblePasswords[user.id] ? user.generatedPassword : "ââ¢ââ¢ââ¢ââ¢ââ¢ââ¢ââ¢"}
+                          </Text>
+                          <Icon
+                            as={visiblePasswords[user.id] ? FiEyeOff : FiEye}
+                            boxSize={3}
+                            color="gray.400"
+                            cursor="pointer"
+                            onClick={() => togglePasswordVisibility(user.id)}
+                          />
                           <Icon
                             as={FiCopy}
                             boxSize={3}
@@ -320,10 +394,25 @@ export default function UserManagement() {
                           />
                         </HStack>
                       ) : (
-                        <Text fontSize="xs" color="gray.400">—</Text>
+                        <Text fontSize="xs" color="gray.400">-</Text>
                       )}
                     </Td>
-                    <Td>{getStatusBadge(user)}</Td>
+                    <Td>
+                      <VStack spacing={1} align="start">
+                        {getVerificationStatusBadge(user)}
+                        {!user.emailVerified && (
+                          <Button
+                            size="xs"
+                            variant="outline"
+                            colorScheme="blue"
+                            onClick={() => handleResendVerificationEmail(user.email)}
+                          >
+                            Resend Email
+                          </Button>
+                        )}
+                      </VStack>
+                    </Td>
+                    <Td>{getActivityStatusBadge(user)}</Td>
                     <Td>{new Date(user.createdAt).toLocaleDateString()}</Td>
                     <Td>
                       {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}

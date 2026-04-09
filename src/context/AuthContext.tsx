@@ -64,12 +64,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await authService.changePassword(currentPassword, newPassword);
   };
 
+  const isAuthenticated = !!user && !!authService.getToken();
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isLoading,
-        isAuthenticated: authService.isAuthenticated(),
+        isAuthenticated,
         signup,
         login,
         logout,

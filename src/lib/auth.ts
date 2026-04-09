@@ -11,6 +11,8 @@ export interface AuthUser {
   role: UserRole;
   createdAt?: string;
   lastLogin?: string;
+  emailVerified?: boolean;
+  isAccountActive?: boolean;
 }
 
 const STORAGE_KEY = 'errbud_user';
@@ -19,8 +21,7 @@ const TOKEN_KEY = 'errbud_token';
 export const authService = {
   // Called on app load — restores session from localStorage
   init() {
-    if (typeof window === 'undefined') return;
-    // Token and user are already in localStorage — axios interceptor handles the rest
+    // This method is now handled in AuthContext useEffect to prevent hydration issues
   },
 
   getCurrentUser(): AuthUser | null {

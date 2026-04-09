@@ -52,7 +52,9 @@ export const adminApi = {
   },
 
   async createStudent(name: string, email: string): Promise<{ name: string; email: string; generatedPassword: string }> {
+    console.log('adminApi.createStudent called:', { name, email });
     const res = await api.post('/users/create-student', { name, email });
+    console.log('adminApi.createStudent response:', res.data);
     return res.data.data;
   },
 

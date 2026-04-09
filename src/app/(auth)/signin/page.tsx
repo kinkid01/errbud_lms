@@ -16,6 +16,7 @@ import {
   FormErrorMessage,
   Icon,
   useToast,
+  Spinner,
 } from "@chakra-ui/react";
 import {
   FiMail,
@@ -25,12 +26,13 @@ import {
   FiArrowRight,
 } from "react-icons/fi";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import { useIsClient } from "@/hooks/useIsClient";
 
 export default function SignInPage() {
-  const { login } = useAuth();
+  const { login, isLoading: authLoading } = useAuth();
   const router = useRouter();
   const toast = useToast();
 
@@ -38,6 +40,7 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const isClient = useIsClient();
 
   const validate = () => {
     const e: Record<string, string> = {};
@@ -57,6 +60,7 @@ export default function SignInPage() {
     if (!validate()) return;
 
     setIsLoading(true);
+    
     try {
       await login(form.email, form.password);
 
@@ -74,9 +78,11 @@ export default function SignInPage() {
       });
       setTimeout(() => router.push(dest), 800);
     } catch (err: any) {
+      const errorMessage = err.message || "Invalid email or password.";
+      
       toast({
         title: "Login failed",
-        description: err.message || "Invalid email or password.",
+        description: errorMessage,
         status: "error",
         duration: 4000,
         isClosable: true,
@@ -86,14 +92,57 @@ export default function SignInPage() {
     }
   };
 
+  // Show loading while auth context is initializing or component is not client-side
+  if (authLoading || !isClient) {
+    return (
+      <div 
+        style={{
+          minHeight: '100vh',
+          backgroundColor: '#f7fafc',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '1rem'
+        }}
+      >
+        <div 
+          style={{
+            width: '48px',
+            height: '48px',
+            border: '4px solid #e2e8f0',
+            borderTop: '4px solid #3182ce',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }}
+        />
+        <style jsx>{`
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
     <Flex minH="100vh" bg="gray.50" align="center" justify="center" p={4}>
       <Box w="full" maxW="420px">
         {/* Logo */}
         <VStack mb={8} spacing={1}>
-          <Heading size="xl" color="blue.600" letterSpacing="-0.5px">
-            Errbud
-          </Heading>
+          <Flex align="center" justify="center" gap={3}>
+            <Box
+              as="img"
+              src="/images/logo/og-image.png"
+              alt="Errbud Logo"
+              w="12"
+              h="12"
+              objectFit="contain"
+            />
+            <Heading size="xl" color="blue.600" letterSpacing="-0.5px">
+              Errbud
+            </Heading>
+          </Flex>
           <Text color="gray.500" fontSize="sm">
             Professional Cleaning Training Platform
           </Text>
@@ -173,7 +222,7 @@ export default function SignInPage() {
             </form>
 
             <Text fontSize="xs" color="gray.400" textAlign="center">
-              Contact your administrator if you don't have login credentials.
+              Contact your administrator if you don&apos;t have login credentials.
             </Text>
 
           </VStack>

@@ -35,7 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.className} ${dancingScript.variable} dark:bg-gray-900`}>
+      <body className={`${outfit.className} ${dancingScript.variable} dark:bg-gray-900`} suppressHydrationWarning={true}>
         <ThemeProvider>
           <ChakraUiProvider>
             <AuthProvider>
