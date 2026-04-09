@@ -41,6 +41,20 @@ const userSchema = new mongoose.Schema(
     lastLogin: {
       type: Date,
     },
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+    emailVerificationToken: {
+      type: String,
+    },
+    emailVerificationExpires: {
+      type: Date,
+    },
+    isAccountActive: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true } // Automatically adds createdAt and updatedAt
 );

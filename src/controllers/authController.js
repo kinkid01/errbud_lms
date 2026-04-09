@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { generateVerificationToken, sendVerificationEmail } = require('../utils/emailService');
 
 const signToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -24,6 +25,22 @@ const login = async (req, res) => {
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
+    }
+
+    // Check if email is verified
+    if (!user.emailVerified) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Please verify your email before logging in' 
+      });
+    }
+
+    // Check if account is active
+    if (!user.isAccountActive) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Account is not active. Please contact administrator' 
+      });
     }
 
     user.lastLogin = new Date();
@@ -80,4 +97,98 @@ const changePassword = async (req, res) => {
   }
 };
 
-module.exports = { login, getMe, changePassword };
+// POST /api/auth/send-verification-email
+const sendVerificationEmailController = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Email is required' 
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ 
+        success: false, 
+        message: 'User not found' 
+      });
+    }
+
+    // Generate verification token
+    const verificationToken = generateVerificationToken();
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    // Update user with verification token
+    user.emailVerificationToken = verificationToken;
+    user.emailVerificationExpires = verificationExpires;
+    await user.save({ validateBeforeSave: false });
+
+    // Send verification email
+    const emailSent = await sendVerificationEmail(user, user.generatedPassword || 'Your password');
+    
+    if (!emailSent) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Failed to send verification email' 
+      });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Verification email sent successfully' 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/auth/verify-email/:token
+const verifyEmailController = async (req, res) => {
+  try {
+    const { token } = req.params;
+
+    if (!token) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Verification token is required' 
+      });
+    }
+
+    const user = await User.findOne({
+      emailVerificationToken: token,
+      emailVerificationExpires: { $gt: new Date() }
+    });
+
+    if (!user) {
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid or expired verification token' 
+      });
+    }
+
+    // Update user verification status
+    user.emailVerified = true;
+    user.isAccountActive = true;
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save({ validateBeforeSave: false });
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Email verified successfully. Your account is now active.' 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { 
+  login, 
+  getMe, 
+  changePassword, 
+  sendVerificationEmail: sendVerificationEmailController, 
+  verifyEmail: verifyEmailController 
+};

@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const { generateVerificationToken, sendVerificationEmail } = require('../utils/emailService');
 
 // Generate a random 8-character password (no ambiguous chars)
 function generatePassword() {
@@ -25,13 +26,33 @@ const createStudent = async (req, res) => {
 
     const generatedPassword = generatePassword();
 
+    // Generate verification token and expiration
+    const verificationToken = generateVerificationToken();
+    const verificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
     const user = await User.create({
       name,
       email,
       password: generatedPassword,
       role: 'student',
       generatedPassword, // stored in plain text so admin can retrieve it
+      emailVerified: false,
+      isAccountActive: false,
+      emailVerificationToken: verificationToken,
+      emailVerificationExpires: verificationExpires,
     });
+
+    // Send verification email
+    try {
+      const emailSent = await sendVerificationEmail(user, generatedPassword);
+      if (!emailSent) {
+        console.error(`Failed to send verification email to ${user.email}`);
+        // Still return success but log the error
+      }
+    } catch (emailError) {
+      console.error('Error sending verification email:', emailError);
+      // Still return success but log the error
+    }
 
     res.status(201).json({
       success: true,
@@ -40,6 +61,8 @@ const createStudent = async (req, res) => {
         name: user.name,
         email: user.email,
         generatedPassword,
+        emailVerified: user.emailVerified,
+        isAccountActive: user.isAccountActive,
       },
     });
   } catch (error) {
