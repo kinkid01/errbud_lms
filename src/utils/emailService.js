@@ -40,9 +40,16 @@ const createTransporter = () => {
 const sendVerificationEmail = async (user, password) => {
   try {
     // Validate required environment variables
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-      console.error('Email configuration missing. Check EMAIL_USER and EMAIL_PASS.');
-      return false;
+    if (process.env.NODE_ENV === 'production') {
+      if (!process.env.ETHEREAL_USER || !process.env.ETHEREAL_PASS) {
+        console.error('Ethereal configuration missing. Check ETHEREAL_USER and ETHEREAL_PASS.');
+        return false;
+      }
+    } else {
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.error('Gmail configuration missing. Check EMAIL_USER and EMAIL_PASS.');
+        return false;
+      }
     }
 
     const transporter = createTransporter();
