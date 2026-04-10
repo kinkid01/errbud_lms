@@ -195,9 +195,40 @@ const verifyEmailController = async (req, res) => {
     user.emailVerificationExpires = undefined;
     await user.save({ validateBeforeSave: false });
 
+    console.log(`User ${user.email} verified and activated:`, {
+      emailVerified: user.emailVerified,
+      isAccountActive: user.isAccountActive
+    });
+
     res.status(200).json({ 
       success: true, 
       message: 'Email verified successfully. Your account is now active.' 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// GET /api/auth/debug-user/:email
+const debugUserController = async (req, res) => {
+  try {
+    const { email } = req.params;
+    const user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      data: {
+        email: user.email,
+        emailVerified: user.emailVerified,
+        isAccountActive: user.isAccountActive,
+        role: user.role,
+        emailVerificationToken: user.emailVerificationToken,
+        emailVerificationExpires: user.emailVerificationExpires
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -209,5 +240,6 @@ module.exports = {
   getMe, 
   changePassword, 
   sendVerificationEmail: sendVerificationEmailController, 
-  verifyEmail: verifyEmailController 
+  verifyEmail: verifyEmailController,
+  debugUser: debugUserController
 };

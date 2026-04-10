@@ -73,8 +73,36 @@ const createStudent = async (req, res) => {
 // GET /api/users  (admin only)
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({ role: 'student' }).sort({ createdAt: -1 });
+    const users = await User.find({}).select('-password');
     res.status(200).json({ success: true, data: users });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Refresh user data (for admin dashboard)
+const refreshUserData = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).select('-password');
+    
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    res.status(200).json({ 
+      success: true, 
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        emailVerified: user.emailVerified,
+        isAccountActive: user.isAccountActive,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      }
+    });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -121,4 +149,11 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { createStudent, getAllUsers, getUserById, updateUser, deleteUser };
+module.exports = {
+  createStudent,
+  getAllUsers,
+  refreshUserData,
+  getUserById,
+  updateUser,
+  deleteUser,
+};
