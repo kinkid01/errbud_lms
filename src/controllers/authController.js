@@ -108,6 +108,7 @@ const changePassword = async (req, res) => {
     }
 
     user.password = newPassword;
+    user.generatedPassword = newPassword; // Sync with admin-visible password
     await user.save();
 
     res.status(200).json({ success: true, message: 'Password updated successfully' });

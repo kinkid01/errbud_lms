@@ -97,6 +97,7 @@ const refreshUserData = async (req, res) => {
         name: user.name,
         email: user.email,
         role: user.role,
+        generatedPassword: user.generatedPassword,
         emailVerified: user.emailVerified,
         isAccountActive: user.isAccountActive,
         createdAt: user.createdAt,
@@ -105,6 +106,40 @@ const refreshUserData = async (req, res) => {
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Update user password (admin only)
+const updateUserPassword = async (req, res) => {
+  try {
+    const { password } = req.body;
+    const { userId } = req.params;
+    
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    
+    // Update the generatedPassword field (plain text for admin visibility)
+    user.generatedPassword = password;
+    await user.save();
+    
+    res.status(200).json({
+      success: true,
+      data: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        generatedPassword: user.generatedPassword,
+        emailVerified: user.emailVerified,
+        isAccountActive: user.isAccountActive,
+        createdAt: user.createdAt,
+        lastLogin: user.lastLogin
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to update password' });
   }
 };
 
@@ -153,6 +188,7 @@ module.exports = {
   createStudent,
   getAllUsers,
   refreshUserData,
+  updateUserPassword,
   getUserById,
   updateUser,
   deleteUser,
