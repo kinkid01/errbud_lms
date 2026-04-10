@@ -25,6 +25,8 @@ function toUser(doc: any): User {
     createdAt: n.createdAt,
     lastLogin: n.lastLogin,
     generatedPassword: doc.generatedPassword ?? '',
+    emailVerified: doc.emailVerified,
+    isAccountActive: doc.isAccountActive,
   };
 }
 
