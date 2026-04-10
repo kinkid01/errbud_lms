@@ -309,16 +309,12 @@ export default function UserManagement() {
     setPollingIntervals(prev => new Map(prev).set(userId, interval));
   }, [stopPolling, handleRefreshUser]);
 
-  // Clear all intervals immediately and on unmount
+  // Cleanup intervals on unmount only
   useEffect(() => {
-    // Clear all existing intervals right away
-    pollingIntervals.forEach(interval => clearInterval(interval));
-    setPollingIntervals(new Map());
-    
     return () => {
       pollingIntervals.forEach(interval => clearInterval(interval));
     };
-  }, [pollingIntervals]);
+  }, []);
 
   // Polling disabled to prevent continuous API calls
   // useEffect(() => {
