@@ -110,7 +110,19 @@ export const authService = {
     newPassword: string
   ): Promise<void> {
     try {
+      // First change the password
       await api.put('/auth/change-password', { currentPassword, newPassword });
+      
+      // Then sync with admin backend to update generatedPassword field
+      const currentUser = this.getCurrentUser();
+      if (currentUser) {
+        try {
+          await api.put(`/users/${currentUser.id}/password`, { password: newPassword });
+        } catch (syncError) {
+          console.warn('Password changed but failed to sync with admin:', syncError);
+          // Don't throw here - the password change succeeded, just the sync failed
+        }
+      }
     } catch (err: any) {
       const status = err?.response?.status;
       const serverMessage = err?.response?.data?.message;

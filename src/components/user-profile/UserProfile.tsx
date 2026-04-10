@@ -30,6 +30,7 @@ import {
   AlertIcon,
   AlertTitle,
   AlertDescription,
+  useToast,
 } from "@chakra-ui/react";
 import {
   FaEdit,
@@ -37,8 +38,12 @@ import {
   FaPhone,
   FaLock,
 } from "react-icons/fa";
+import { useAuth } from "@/context/AuthContext";
+import { adminApi } from "@/lib/adminApi";
 
 export default function UserProfile() {
+  const { changePassword } = useAuth();
+  const toast = useToast();
   const { isOpen: isPersonalInfoOpen, onOpen: onPersonalInfoOpen, onClose: onPersonalInfoClose } = useDisclosure();
   const { isOpen: isPasswordOpen, onOpen: onPasswordOpen, onClose: onPasswordClose } = useDisclosure();
 
@@ -104,8 +109,8 @@ export default function UserProfile() {
     setIsPasswordLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Call auth service to change password
+      await changePassword(passwordData.currentPassword, passwordData.newPassword);
       
       console.log("Password change request:", passwordData);
       
@@ -115,8 +120,16 @@ export default function UserProfile() {
         newPassword: "",
         confirmPassword: "",
       });
-    } catch (err) {
-      setPasswordError("Failed to change password. Please try again.");
+
+      toast({
+        title: "Password Changed Successfully!",
+        description: "Your password has been updated and synced with the admin system.",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (err: any) {
+      setPasswordError(err.message || "Failed to change password. Please try again.");
     } finally {
       setIsPasswordLoading(false);
     }

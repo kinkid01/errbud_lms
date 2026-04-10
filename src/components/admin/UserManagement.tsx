@@ -78,6 +78,7 @@ export default function UserManagement() {
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
   const [refreshingUsers, setRefreshingUsers] = useState<Set<string>>(new Set());
   const [pollingIntervals, setPollingIntervals] = useState<Map<string, NodeJS.Timeout>>(new Map());
+  const [recentPasswordChanges, setRecentPasswordChanges] = useState<Set<string>>(new Set());
 
   const loadUsers = useCallback(async () => {
     try {
@@ -226,6 +227,10 @@ export default function UserManagement() {
     try {
       const freshData = await adminApi.refreshUserStatus(userId);
       
+      // Check if password changed
+      const currentUser = users.find(u => u.id === userId);
+      const passwordChanged = currentUser && freshData.generatedPassword !== currentUser.generatedPassword;
+      
       // Update specific user in the users array
       setUsers(prevUsers => 
         prevUsers.map(user => 
@@ -240,18 +245,41 @@ export default function UserManagement() {
         )
       );
       
+      // Track recent password changes
+      if (passwordChanged) {
+        setRecentPasswordChanges(prev => new Set(prev).add(userId));
+        // Remove from recent changes after 10 seconds
+        setTimeout(() => {
+          setRecentPasswordChanges(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(userId);
+            return newSet;
+          });
+        }, 10000);
+        
+        toast({
+          title: "Password Updated!",
+          description: `${freshData.name} has changed their password`,
+          status: "info",
+          duration: 4000,
+          isClosable: true,
+        });
+      }
+      
       // Stop polling for this user if they're now verified
       if (freshData.emailVerified && freshData.isAccountActive) {
         stopPolling(userId);
       }
       
-      toast({
-        title: "Status refreshed",
-        description: "User status has been updated",
-        status: "success",
-        duration: 2000,
-        isClosable: true,
-      });
+      if (!passwordChanged) {
+        toast({
+          title: "Status refreshed",
+          description: "User status has been updated",
+          status: "success",
+          duration: 2000,
+          isClosable: true,
+        });
+      }
     } catch (error: any) {
       toast({
         title: "Failed to refresh",
@@ -267,16 +295,16 @@ export default function UserManagement() {
         return newSet;
       });
     }
-  }, [stopPolling, toast]);
+  }, [stopPolling, toast, users]);
 
   const startPolling = useCallback((userId: string) => {
     // Clear existing interval for this user
     stopPolling(userId);
     
-    // Start new interval - poll every 30 seconds
+    // Start new interval - poll every 15 seconds for more responsive updates
     const interval = setInterval(() => {
       handleRefreshUser(userId);
-    }, 30000);
+    }, 15000);
     
     setPollingIntervals(prev => new Map(prev).set(userId, interval));
   }, [stopPolling, handleRefreshUser]);
@@ -288,10 +316,10 @@ export default function UserManagement() {
     };
   }, [pollingIntervals]);
 
-  // Start polling for users with pending verification
+  // Start polling for all active users to detect password changes
   useEffect(() => {
     users.forEach(user => {
-      if (!user.emailVerified) {
+      if (user.emailVerified && user.isAccountActive) {
         startPolling(user.id);
       } else {
         stopPolling(user.id);
@@ -474,11 +502,15 @@ export default function UserManagement() {
                           <Text 
                             fontFamily="mono" 
                             fontSize="xs" 
-                            color="gray.600"
+                            color={recentPasswordChanges.has(user.id) ? "blue.600" : "gray.600"}
                             userSelect={visiblePasswords[user.id] ? "text" : "none"}
+                            fontWeight={recentPasswordChanges.has(user.id) ? "bold" : "normal"}
                           >
                             {visiblePasswords[user.id] ? user.generatedPassword : "········"}
                           </Text>
+                          {recentPasswordChanges.has(user.id) && (
+                            <Badge colorScheme="blue" fontSize="xs" variant="solid">Updated</Badge>
+                          )}
                           <Icon
                             as={visiblePasswords[user.id] ? FiEyeOff : FiEye}
                             boxSize={3}

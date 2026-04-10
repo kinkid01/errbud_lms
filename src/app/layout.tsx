@@ -1,4 +1,3 @@
-import { Outfit, Dancing_Script } from 'next/font/google';
 import './globals.css';
 import "flatpickr/dist/flatpickr.css";
 import { ThemeProvider } from '@/context/ThemeContext';
@@ -19,15 +18,6 @@ export const metadata: Metadata = {
   },
 };
 
-const outfit = Outfit({
-  subsets: ["latin"],
-});
-
-const dancingScript = Dancing_Script({
-  subsets: ["latin"],
-  variable: "--font-dancing-script",
-});
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -35,7 +25,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${outfit.className} ${dancingScript.variable} dark:bg-gray-900`} suppressHydrationWarning={true}>
+      <body className="font-sans dark:bg-gray-900" suppressHydrationWarning={true}>
         <ThemeProvider>
           <ChakraUiProvider>
             <AuthProvider>

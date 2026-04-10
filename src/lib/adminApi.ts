@@ -70,6 +70,16 @@ export const adminApi = {
     }
   },
 
+  async updateUserPassword(userId: string, newPassword: string): Promise<User> {
+    try {
+      const res = await api.put(`/users/${userId}/password`, { password: newPassword });
+      return toUser(res.data.data);
+    } catch (error) {
+      console.error('Failed to update user password:', error);
+      throw error;
+    }
+  },
+
   async getUserProgress(userId: string): Promise<UserProgress[]> {
     const res = await api.get(`/progress/user/${userId}`);
     return res.data.data.map((p: any) => ({
