@@ -309,23 +309,27 @@ export default function UserManagement() {
     setPollingIntervals(prev => new Map(prev).set(userId, interval));
   }, [stopPolling, handleRefreshUser]);
 
-  // Cleanup intervals on unmount
+  // Clear all intervals immediately and on unmount
   useEffect(() => {
+    // Clear all existing intervals right away
+    pollingIntervals.forEach(interval => clearInterval(interval));
+    setPollingIntervals(new Map());
+    
     return () => {
       pollingIntervals.forEach(interval => clearInterval(interval));
     };
   }, [pollingIntervals]);
 
-  // Start polling for all active users to detect password changes
-  useEffect(() => {
-    users.forEach(user => {
-      if (user.emailVerified && user.isAccountActive) {
-        startPolling(user.id);
-      } else {
-        stopPolling(user.id);
-      }
-    });
-  }, [users, startPolling, stopPolling]);
+  // Polling disabled to prevent continuous API calls
+  // useEffect(() => {
+  //   users.forEach(user => {
+  //     if (user.emailVerified && user.isAccountActive) {
+  //       startPolling(user.id);
+  //     } else {
+  //       stopPolling(user.id);
+  //     }
+  //   });
+  // }, [users, startPolling, stopPolling]);
 
   const getVerificationStatusBadge = (user: User) => {
     if (user.emailVerified && user.isAccountActive) {
