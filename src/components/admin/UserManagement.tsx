@@ -23,7 +23,6 @@ import {
   InputLeftElement,
   Select,
   Flex,
-  Spacer,
   useToast,
   Modal,
   ModalOverlay,
@@ -50,6 +49,7 @@ import {
   FiKey,
   FiEye,
   FiEyeOff,
+  FiRefreshCw,
 } from "react-icons/fi";
 import { useEffect, useState, useCallback } from "react";
 import { User, UserProgress } from "@/types/admin";
@@ -76,6 +76,8 @@ export default function UserManagement() {
   const [isCreating, setIsCreating] = useState(false);
   const [createdStudent, setCreatedStudent] = useState<{ name: string; email: string; generatedPassword: string } | null>(null);
   const [visiblePasswords, setVisiblePasswords] = useState<Record<string, boolean>>({});
+  const [refreshingUsers, setRefreshingUsers] = useState<Set<string>>(new Set());
+  const [pollingIntervals, setPollingIntervals] = useState<Map<string, NodeJS.Timeout>>(new Map());
 
   const loadUsers = useCallback(async () => {
     try {
@@ -160,7 +162,7 @@ export default function UserManagement() {
     }
   };
 
-  const handleResendVerificationEmail = async (email: string) => {
+  const handleResendVerificationEmail = async (email: string, userId?: string) => {
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/send-verification-email`, {
         method: "POST",
@@ -177,6 +179,14 @@ export default function UserManagement() {
           duration: 3000,
           isClosable: true,
         });
+
+        // Auto-refresh user status after sending verification email
+        if (userId) {
+          // Wait a moment then refresh to show any immediate status changes
+          setTimeout(() => {
+            handleRefreshUser(userId);
+          }, 2000);
+        }
       } else {
         throw new Error(data.message || "Failed to send verification email");
       }
@@ -197,6 +207,97 @@ export default function UserManagement() {
       [userId]: !prev[userId]
     }));
   };
+
+  const stopPolling = useCallback((userId: string) => {
+    const interval = pollingIntervals.get(userId);
+    if (interval) {
+      clearInterval(interval);
+      setPollingIntervals(prev => {
+        const newMap = new Map(prev);
+        newMap.delete(userId);
+        return newMap;
+      });
+    }
+  }, [pollingIntervals]);
+
+  const handleRefreshUser = useCallback(async (userId: string) => {
+    setRefreshingUsers(prev => new Set(prev).add(userId));
+    
+    try {
+      const freshData = await adminApi.refreshUserStatus(userId);
+      
+      // Update specific user in the users array
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId ? { ...user, ...freshData } : user
+        )
+      );
+      
+      // Also update filtered users if needed
+      setFilteredUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId ? { ...user, ...freshData } : user
+        )
+      );
+      
+      // Stop polling for this user if they're now verified
+      if (freshData.emailVerified && freshData.isAccountActive) {
+        stopPolling(userId);
+      }
+      
+      toast({
+        title: "Status refreshed",
+        description: "User status has been updated",
+        status: "success",
+        duration: 2000,
+        isClosable: true,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to refresh",
+        description: error.message || "Unable to refresh user status",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    } finally {
+      setRefreshingUsers(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(userId);
+        return newSet;
+      });
+    }
+  }, [stopPolling, toast]);
+
+  const startPolling = useCallback((userId: string) => {
+    // Clear existing interval for this user
+    stopPolling(userId);
+    
+    // Start new interval - poll every 30 seconds
+    const interval = setInterval(() => {
+      handleRefreshUser(userId);
+    }, 30000);
+    
+    setPollingIntervals(prev => new Map(prev).set(userId, interval));
+  }, [stopPolling, handleRefreshUser]);
+
+  // Cleanup intervals on unmount
+  useEffect(() => {
+    return () => {
+      pollingIntervals.forEach(interval => clearInterval(interval));
+    };
+  }, [pollingIntervals]);
+
+  // Start polling for users with pending verification
+  useEffect(() => {
+    users.forEach(user => {
+      if (!user.emailVerified) {
+        startPolling(user.id);
+      } else {
+        stopPolling(user.id);
+      }
+    });
+  }, [users, startPolling, stopPolling]);
 
   const getVerificationStatusBadge = (user: User) => {
     if (user.emailVerified && user.isAccountActive) {
@@ -376,7 +477,7 @@ export default function UserManagement() {
                             color="gray.600"
                             userSelect={visiblePasswords[user.id] ? "text" : "none"}
                           >
-                            {visiblePasswords[user.id] ? user.generatedPassword : "ââ¢ââ¢ââ¢ââ¢ââ¢ââ¢ââ¢"}
+                            {visiblePasswords[user.id] ? user.generatedPassword : "········"}
                           </Text>
                           <Icon
                             as={visiblePasswords[user.id] ? FiEyeOff : FiEye}
@@ -405,7 +506,7 @@ export default function UserManagement() {
                             size="xs"
                             variant="outline"
                             colorScheme="blue"
-                            onClick={() => handleResendVerificationEmail(user.email)}
+                            onClick={() => handleResendVerificationEmail(user.email, user.id)}
                           >
                             Resend Email
                           </Button>
@@ -418,15 +519,28 @@ export default function UserManagement() {
                       {user.lastLogin ? new Date(user.lastLogin).toLocaleDateString() : "Never"}
                     </Td>
                     <Td>
-                      <Button
-                        size="sm"
-                        leftIcon={<Icon as={FiEye} />}
-                        onClick={() => handleViewProgress(user)}
-                        colorScheme="blue"
-                        variant="outline"
-                      >
-                        View Progress
-                      </Button>
+                      <HStack spacing={2}>
+                        <Button
+                          size="sm"
+                          leftIcon={<Icon as={FiEye} />}
+                          onClick={() => handleViewProgress(user)}
+                          colorScheme="blue"
+                          variant="outline"
+                        >
+                          View Progress
+                        </Button>
+                        <Button
+                          size="sm"
+                          leftIcon={<Icon as={FiRefreshCw} />}
+                          onClick={() => handleRefreshUser(user.id)}
+                          colorScheme="gray"
+                          variant="outline"
+                          isLoading={refreshingUsers.has(user.id)}
+                          loadingText="Refreshing"
+                        >
+                          Refresh
+                        </Button>
+                      </HStack>
                     </Td>
                   </Tr>
                 ))}
@@ -456,7 +570,7 @@ export default function UserManagement() {
             <ModalCloseButton />
             <ModalBody pb={2}>
               {createdStudent ? (
-                /* Success state — show generated password */
+                /* Success state - show generated password */
                 <VStack spacing={5} align="stretch" py={2}>
                   <Box bg="green.50" border="1px solid" borderColor="green.200" borderRadius="xl" p={5}>
                     <Text fontWeight="700" color="green.700" mb={1}>Account created!</Text>
@@ -491,7 +605,7 @@ export default function UserManagement() {
                     </VStack>
                   </Box>
                   <Text fontSize="xs" color="gray.400" textAlign="center">
-                    This password is also saved on the student's row in the Users table.
+                    This password is also saved on the student&apos;s row in the Users table.
                   </Text>
                 </VStack>
               ) : (

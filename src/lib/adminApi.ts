@@ -58,6 +58,16 @@ export const adminApi = {
     return res.data.data;
   },
 
+  async refreshUserStatus(userId: string): Promise<User> {
+    try {
+      const res = await api.get(`/users/refresh/${userId}`);
+      return toUser(res.data.data);
+    } catch (error) {
+      console.error('Failed to refresh user status:', error);
+      throw error;
+    }
+  },
+
   async getUserProgress(userId: string): Promise<UserProgress[]> {
     const res = await api.get(`/progress/user/${userId}`);
     return res.data.data.map((p: any) => ({
