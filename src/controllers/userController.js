@@ -109,38 +109,14 @@ const refreshUserData = async (req, res) => {
   }
 };
 
-// Update user password (admin only)
-const updateUserPassword = async (req, res) => {
-  try {
-    const { password } = req.body;
-    const { userId } = req.params;
-    
-    // Find user
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).json({ success: false, message: 'User not found' });
-    }
-    
-    // Update the generatedPassword field (plain text for admin visibility)
-    user.generatedPassword = password;
-    await user.save();
-    
-    res.status(200).json({
-      success: true,
-      data: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        generatedPassword: user.generatedPassword,
-        emailVerified: user.emailVerified,
-        isAccountActive: user.isAccountActive,
-        createdAt: user.createdAt,
-        lastLogin: user.lastLogin
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update password' });
-  }
+
+// Update user status (activate/deactivate)
+const updateUserStatus = async (req, res) => {
+  const { isAccountActive } = req.body;
+  const user = await User.findById(req.params.userId);
+  user.isAccountActive = isAccountActive;
+  await user.save();
+  res.json({ success: true, data: user });
 };
 
 // GET /api/users/:id  (admin only)
@@ -175,20 +151,15 @@ const updateUser = async (req, res) => {
 
 // DELETE /api/users/:id  (admin only)
 const deleteUser = async (req, res) => {
-  try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
-    res.status(200).json({ success: true, message: 'User deleted' });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+  const user = await User.findByIdAndDelete(req.params.userId);
+  res.json({ success: true, message: 'User deleted' });
 };
 
 module.exports = {
   createStudent,
   getAllUsers,
   refreshUserData,
-  updateUserPassword,
+  updateUserStatus,
   getUserById,
   updateUser,
   deleteUser,
