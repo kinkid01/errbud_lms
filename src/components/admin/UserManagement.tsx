@@ -37,6 +37,18 @@ import {
   StatLabel,
   StatNumber,
   StatHelpText,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuDivider,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+  useDisclosure as useDisclosureAlt,
 } from "@chakra-ui/react";
 import {
   FiUsers,
@@ -50,8 +62,12 @@ import {
   FiEye,
   FiEyeOff,
   FiRefreshCw,
+  FiMoreVertical,
+  FiTrash2,
+  FiUserCheck,
+  FiUserX,
 } from "react-icons/fi";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { User, UserProgress } from "@/types/admin";
 import { adminApi } from "@/lib/adminApi";
 import UserProgressModal from "./UserProgressModal";
@@ -79,6 +95,9 @@ export default function UserManagement() {
   const [refreshingUsers, setRefreshingUsers] = useState<Set<string>>(new Set());
   const [pollingIntervals, setPollingIntervals] = useState<Map<string, NodeJS.Timeout>>(new Map());
   const [recentPasswordChanges, setRecentPasswordChanges] = useState<Set<string>>(new Set());
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosureAlt();
+  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const cancelRef = useRef<HTMLButtonElement>(null);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -338,6 +357,75 @@ export default function UserManagement() {
     return <Badge colorScheme="gray">Unknown</Badge>;
   };
 
+  const handleUpdateUserStatus = async (userId: string, isActive: boolean) => {
+    try {
+      const updatedUser = await adminApi.updateUserStatus(userId, isActive);
+      
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId ? updatedUser : user
+        )
+      );
+      
+      setFilteredUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === userId ? updatedUser : user
+        )
+      );
+      
+      toast({
+        title: `User ${isActive ? 'activated' : 'deactivated'}`,
+        description: `User has been ${isActive ? 'activated' : 'deactivated'} successfully`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+    } catch (error: any) {
+      toast({
+        title: "Failed to update status",
+        description: error.message || "Unable to update user status",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const handleDeleteUser = async () => {
+    if (!userToDelete) return;
+    
+    try {
+      await adminApi.deleteUser(userToDelete.id);
+      
+      setUsers(prevUsers => prevUsers.filter(user => user.id !== userToDelete.id));
+      setFilteredUsers(prevUsers => prevUsers.filter(user => user.id !== userToDelete.id));
+      
+      toast({
+        title: "User deleted",
+        description: `${userToDelete.name} has been deleted successfully`,
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+      
+      setUserToDelete(null);
+      onDeleteClose();
+    } catch (error: any) {
+      toast({
+        title: "Failed to delete user",
+        description: error.message || "Unable to delete user",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    }
+  };
+
+  const openDeleteDialog = (user: User) => {
+    setUserToDelete(user);
+    onDeleteOpen();
+  };
+
   const getActivityStatusBadge = (user: User) => {
     if (!user.emailVerified || !user.isAccountActive) {
       return <Badge colorScheme="gray">Not Active</Badge>;
@@ -572,6 +660,40 @@ export default function UserManagement() {
                         >
                           Refresh
                         </Button>
+                        <Menu>
+                          <MenuButton
+                            as={Button}
+                            size="sm"
+                            variant="outline"
+                            rightIcon={<Icon as={FiMoreVertical} />}
+                          >
+                            Manage
+                          </MenuButton>
+                          <MenuList>
+                            <MenuItem
+                              icon={<Icon as={FiUserCheck} />}
+                              onClick={() => handleUpdateUserStatus(user.id, true)}
+                              isDisabled={user.isAccountActive}
+                            >
+                              Make Active
+                            </MenuItem>
+                            <MenuItem
+                              icon={<Icon as={FiUserX} />}
+                              onClick={() => handleUpdateUserStatus(user.id, false)}
+                              isDisabled={!user.isAccountActive}
+                            >
+                              Make Inactive
+                            </MenuItem>
+                            <MenuDivider />
+                            <MenuItem
+                              icon={<Icon as={FiTrash2} />}
+                              onClick={() => openDeleteDialog(user)}
+                              color="red.500"
+                            >
+                              Delete User
+                            </MenuItem>
+                          </MenuList>
+                        </Menu>
                       </HStack>
                     </Td>
                   </Tr>
@@ -686,6 +808,32 @@ export default function UserManagement() {
             </ModalFooter>
           </ModalContent>
         </Modal>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog
+          isOpen={isDeleteOpen}
+          onClose={onDeleteClose}
+          leastDestructiveRef={cancelRef}
+        >
+          <AlertDialogOverlay>
+            <AlertDialogContent>
+              <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                Delete User
+              </AlertDialogHeader>
+              <AlertDialogBody>
+                Are you sure you want to delete {userToDelete?.name}? This action cannot be undone.
+              </AlertDialogBody>
+              <AlertDialogFooter>
+                <Button ref={cancelRef} onClick={onDeleteClose}>
+                  Cancel
+                </Button>
+                <Button colorScheme="red" onClick={handleDeleteUser} ml={3}>
+                  Delete
+                </Button>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialogOverlay>
+        </AlertDialog>
 
       </VStack>
     </Box>

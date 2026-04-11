@@ -80,6 +80,25 @@ export const adminApi = {
     }
   },
 
+  async updateUserStatus(userId: string, isActive: boolean): Promise<User> {
+    try {
+      const res = await api.put(`/users/${userId}/status`, { isAccountActive: isActive });
+      return toUser(res.data.data);
+    } catch (error) {
+      console.error('Failed to update user status:', error);
+      throw error;
+    }
+  },
+
+  async deleteUser(userId: string): Promise<void> {
+    try {
+      await api.delete(`/users/${userId}`);
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+      throw error;
+    }
+  },
+
   async getUserProgress(userId: string): Promise<UserProgress[]> {
     const res = await api.get(`/progress/user/${userId}`);
     return res.data.data.map((p: any) => ({

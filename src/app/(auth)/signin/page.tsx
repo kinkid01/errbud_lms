@@ -133,17 +133,16 @@ export default function SignInPage() {
           <Flex align="center" justify="center" gap={3}>
             <Box
               as="img"
-              src="/images/logo/og-image.png"
+              src="/images/Errbud.png"
               alt="Errbud Logo"
-              w="12"
-              h="12"
+              w="40"
               objectFit="contain"
             />
-            <Heading size="xl" color="blue.600" letterSpacing="-0.5px">
+            {/* <Heading size="xl" color="blue.600" letterSpacing="-0.5px">
               Errbud
-            </Heading>
+            </Heading> */}
           </Flex>
-          <Text color="gray.500" fontSize="sm">
+          <Text color="gray.500" fontSize="sm" pt={2}>
             Professional Cleaning Training Platform
           </Text>
         </VStack>
