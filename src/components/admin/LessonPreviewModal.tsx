@@ -27,83 +27,6 @@ interface LessonPreviewModalProps {
   curriculum: Curriculum;
 }
 
-function renderContent(content: string): React.ReactNode[] {
-  const lines = content.split("\n");
-  const elements: React.ReactNode[] = [];
-  let key = 0;
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i];
-    const k = key++;
-
-    if (line.trim() === "") {
-      elements.push(<Box key={k} h={3} />);
-      i++;
-      continue;
-    }
-
-    if (/^\s*[•\-\*·]\s/.test(line)) {
-      const bullets: string[] = [];
-      while (i < lines.length && /^\s*[•\-\*·]\s/.test(lines[i])) {
-        bullets.push(lines[i].replace(/^\s*[•\-\*·]\s*/, ""));
-        i++;
-      }
-      elements.push(
-        <Box key={k} mb={3}>
-          {bullets.map((b, bi) => (
-            <HStack key={bi} spacing={2} align="start" mb={1}>
-              <Text color="blue.400" fontSize="md" lineHeight="1.8" flexShrink={0}>•</Text>
-              <Text color="gray.700" fontSize="md" lineHeight="1.8">{b}</Text>
-            </HStack>
-          ))}
-        </Box>
-      );
-      continue;
-    }
-
-    if (/^\s*\d+\.\s/.test(line)) {
-      const items: { num: string; text: string }[] = [];
-      while (i < lines.length && /^\s*\d+\.\s/.test(lines[i])) {
-        const m = lines[i].match(/^\s*(\d+)\.\s+(.*)/);
-        if (m) items.push({ num: m[1], text: m[2] });
-        i++;
-      }
-      elements.push(
-        <Box key={k} mb={3}>
-          {items.map((item, ii) => (
-            <HStack key={ii} spacing={2} align="start" mb={1}>
-              <Text color="blue.500" fontSize="md" lineHeight="1.8" fontWeight="semibold" flexShrink={0}>
-                {item.num}.
-              </Text>
-              <Text color="gray.700" fontSize="md" lineHeight="1.8">{item.text}</Text>
-            </HStack>
-          ))}
-        </Box>
-      );
-      continue;
-    }
-
-    // Regular paragraph — collect consecutive lines
-    const paragraphLines: string[] = [];
-    while (
-      i < lines.length &&
-      lines[i].trim() !== "" &&
-      !/^\s*[•\-\*·]\s/.test(lines[i]) &&
-      !/^\s*\d+\.\s/.test(lines[i])
-    ) {
-      paragraphLines.push(lines[i]);
-      i++;
-    }
-    elements.push(
-      <Text key={k} color="gray.700" fontSize="md" lineHeight="1.8" mb={4}>
-        {paragraphLines.join(" ")}
-      </Text>
-    );
-  }
-
-  return elements;
-}
 
 const LessonPreviewModal: React.FC<LessonPreviewModalProps> = ({ isOpen, onClose, curriculum }) => {
   const images: string[] = (() => {
@@ -149,7 +72,34 @@ const LessonPreviewModal: React.FC<LessonPreviewModalProps> = ({ isOpen, onClose
             >
               <Divider mb={5} />
               <Box>
-                {curriculum.content ? renderContent(curriculum.content) : (
+                {curriculum.content ? (
+                  <Box
+                    dangerouslySetInnerHTML={{ __html: curriculum.content }}
+                    sx={{
+                      fontSize: "md",
+                      lineHeight: "1.8",
+                      color: "gray.700",
+                      "& h1": { fontSize: "1.5em", fontWeight: "bold", my: 2 },
+                      "& h2": { fontSize: "1.3em", fontWeight: "bold", my: 2 },
+                      "& h3": { fontSize: "1.1em", fontWeight: "bold", my: 2 },
+                      "& ul": { pl: 5, listStyleType: "disc", mb: 3 },
+                      "& ol": { pl: 5, listStyleType: "decimal", mb: 3 },
+                      "& li": { mb: 1 },
+                      "& blockquote": {
+                        borderLeft: "3px solid",
+                        borderColor: "blue.300",
+                        pl: 3,
+                        color: "gray.500",
+                        fontStyle: "italic",
+                        my: 2,
+                      },
+                      "& p": { mb: 4 },
+                      "& strong": { fontWeight: "bold" },
+                      "& em": { fontStyle: "italic" },
+                      "& u": { textDecoration: "underline" },
+                    }}
+                  />
+                ) : (
                   <Text color="gray.400" fontStyle="italic">No content added yet.</Text>
                 )}
               </Box>
