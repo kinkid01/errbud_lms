@@ -130,7 +130,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
                   rows={4}
                 />
               </FormControl>
-
+{/* 
               <FormControl>
                 <FormLabel>Cover Image URL</FormLabel>
                 <Input
@@ -138,7 +138,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
                   onChange={(e) => handleChange("coverImage", e.target.value)}
                   placeholder="Enter cover image URL (optional)"
                 />
-              </FormControl>
+              </FormControl> */}
 
               <FormControl isRequired>
                 <FormLabel>Status</FormLabel>

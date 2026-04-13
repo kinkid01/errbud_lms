@@ -390,7 +390,7 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
                       </HStack>
                     </Flex>
 
-                    {curriculum.visualContent && (() => {
+                    {/* {curriculum.visualContent && (() => {
                       try {
                         const imgs = JSON.parse(curriculum.visualContent!);
                         const src = Array.isArray(imgs) ? imgs[0] : curriculum.visualContent;
@@ -408,9 +408,9 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
                           />
                         );
                       } catch { return null; }
-                    })()}
+                    })()} */}
 
-                    <Accordion allowToggle>
+                    {/* <Accordion allowToggle>
                       <AccordionItem border="none">
                         <h2>
                           <AccordionButton>
@@ -447,7 +447,7 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
                           </VStack>
                         </AccordionPanel>
                       </AccordionItem>
-                    </Accordion>
+                    </Accordion> */}
                   </VStack>
                 </CardBody>
               </Card>
