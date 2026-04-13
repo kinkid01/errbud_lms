@@ -20,12 +20,6 @@ import {
   Textarea,
   IconButton,
   Spinner,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
   useDisclosure,
 } from "@chakra-ui/react";
 import {
@@ -39,6 +33,7 @@ import {
 import { useEffect, useState, useCallback, useRef } from "react";
 import { FinalAssessment, Question } from "@/types/admin";
 import { finalAssessmentApi } from "@/lib/finalAssessmentApi";
+import DeleteConfirmation from "./DeleteConfirmation";
 
 const MAX_QUESTIONS = 20;
 const GENERAL_EXAM_ID = "general";
@@ -64,7 +59,7 @@ export default function ExamManagement() {
 
   const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const cancelRef = useRef<HTMLButtonElement>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadExam = useCallback(async () => {
     try {
@@ -122,10 +117,20 @@ export default function ExamManagement() {
     setEditingQuestion(null);
   };
 
-  const confirmDeleteQuestion = () => {
-    if (deletingId) setQuestions((prev) => prev.filter((q) => q.id !== deletingId));
-    setDeletingId(null);
-    onDeleteClose();
+  const confirmDeleteQuestion = async () => {
+    if (!deletingId) return;
+    
+    setIsDeleting(true);
+    try {
+      // Just remove from local state since this is a temporary operation
+      setQuestions((prev) => prev.filter((q) => q.id !== deletingId));
+      setDeletingId(null);
+      onDeleteClose();
+    } catch (error: any) {
+      throw error; // Let DeleteConfirmation handle the error
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   // ---- Save exam ----
@@ -366,19 +371,16 @@ export default function ExamManagement() {
         </Card>
       </VStack>
 
-      {/* Delete dialog */}
-      <AlertDialog isOpen={isDeleteOpen} leastDestructiveRef={cancelRef} onClose={onDeleteClose}>
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontWeight="bold">Delete Question</AlertDialogHeader>
-            <AlertDialogBody>Are you sure? This cannot be undone.</AlertDialogBody>
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onDeleteClose}>Cancel</Button>
-              <Button colorScheme="red" ml={3} onClick={confirmDeleteQuestion}>Delete</Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+      {/* Delete Confirmation Dialog */}
+        <DeleteConfirmation
+          isOpen={isDeleteOpen}
+          onClose={onDeleteClose}
+          onConfirm={confirmDeleteQuestion}
+          title="Delete Question"
+          message="Are you sure you want to delete this question? This action cannot be undone."
+          itemName={`Question ${deletingId ? questions.findIndex(q => q.id === deletingId) + 1 : ''}`}
+          isLoading={isDeleting}
+        />
     </Box>
   );
 }

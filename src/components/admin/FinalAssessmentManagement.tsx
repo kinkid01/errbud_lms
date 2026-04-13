@@ -30,12 +30,6 @@ import {
   NumberInputStepper,
   NumberIncrementStepper,
   NumberDecrementStepper,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
   Divider,
   Table,
   Thead,
@@ -65,6 +59,7 @@ import { FinalAssessment, Course, Question } from "@/types/admin";
 import { finalAssessmentApi } from "@/lib/finalAssessmentApi";
 import FinalAssessmentForm from "./FinalAssessmentForm";
 import AssessmentResults from "./AssessmentResults";
+import DeleteConfirmation from "./DeleteConfirmation";
 
 interface FinalAssessmentManagementProps {
   course: Course;
@@ -529,32 +524,15 @@ export default function FinalAssessmentManagement({ course, onBack }: FinalAsses
         />
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog
+        <DeleteConfirmation
           isOpen={isDeleteAlertOpen}
-          leastDestructiveRef={cancelRef}
           onClose={onDeleteAlertClose}
-        >
-          <AlertDialogOverlay>
-            <AlertDialogContent>
-              <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                Delete Final Assessment
-              </AlertDialogHeader>
-
-              <AlertDialogBody>
-                Are you sure you want to delete this final assessment? This action cannot be undone and will also remove all assessment results.
-              </AlertDialogBody>
-
-              <AlertDialogFooter>
-                <Button ref={cancelRef} onClick={onDeleteAlertClose}>
-                  Cancel
-                </Button>
-                <Button colorScheme="red" onClick={confirmDelete} ml={3}>
-                  Delete
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogOverlay>
-        </AlertDialog>
+          onConfirm={confirmDelete}
+          title="Delete Final Assessment"
+          message="Are you sure you want to delete this final assessment? This action cannot be undone and will also remove all assessment results."
+          itemName="Final Assessment"
+          isLoading={false}
+        />
       </VStack>
     </Box>
   );

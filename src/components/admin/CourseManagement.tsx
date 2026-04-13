@@ -25,12 +25,6 @@ import {
   Flex,
   useToast,
   useDisclosure,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
   Stat,
   StatLabel,
   StatNumber,
@@ -49,6 +43,7 @@ import { Course } from "@/types/admin";
 import { adminApi } from "@/lib/adminApi";
 import CourseForm from "./CourseForm";
 import CurriculumManagement from "./CurriculumManagement";
+import DeleteConfirmation from "./DeleteConfirmation";
 
 export default function CourseManagement() {
   const cardBg = useColorModeValue("white", "gray.800");
@@ -66,7 +61,7 @@ export default function CourseManagement() {
 
   const { isOpen: isFormModalOpen, onOpen: onFormModalOpen, onClose: onFormModalClose } = useDisclosure();
   const { isOpen: isDeleteAlertOpen, onOpen: onDeleteAlertOpen, onClose: onDeleteAlertClose } = useDisclosure();
-  const cancelRef = useRef<HTMLButtonElement>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadCourses = useCallback(async () => {
     try {
@@ -130,6 +125,7 @@ export default function CourseManagement() {
   const confirmDelete = async () => {
     if (!selectedCourse) return;
 
+    setIsDeleting(true);
     try {
       await adminApi.deleteCourse(selectedCourse.id);
       toast({
@@ -141,14 +137,10 @@ export default function CourseManagement() {
       });
       await loadCourses();
       onDeleteAlertClose();
-    } catch (error) {
-      toast({
-        title: "Error deleting module",
-        description: "Failed to delete module",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-      });
+    } catch (error: any) {
+      throw error; // Let DeleteConfirmation handle the error
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -388,32 +380,15 @@ export default function CourseManagement() {
         />
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog
+        <DeleteConfirmation
           isOpen={isDeleteAlertOpen}
-          leastDestructiveRef={cancelRef}
           onClose={onDeleteAlertClose}
-        >
-          <AlertDialogOverlay>
-            <AlertDialogContent>
-              <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                Delete Course
-              </AlertDialogHeader>
-
-              <AlertDialogBody>
-                Are you sure you want to delete &quot;{selectedCourse?.title}&quot;? This action cannot be undone and will also remove all associated lessons and user progress.
-              </AlertDialogBody>
-
-              <AlertDialogFooter>
-                <Button ref={cancelRef} onClick={onDeleteAlertClose}>
-                  Cancel
-                </Button>
-                <Button colorScheme="red" onClick={confirmDelete} ml={3}>
-                  Delete
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogOverlay>
-        </AlertDialog>
+          onConfirm={confirmDelete}
+          title="Delete Course"
+          message="Are you sure you want to delete this module? This action cannot be undone and will also remove all associated lessons and user progress."
+          itemName={selectedCourse?.title}
+          isLoading={isDeleting}
+        />
       </VStack>
     </Box>
   );

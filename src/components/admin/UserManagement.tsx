@@ -42,13 +42,6 @@ import {
   MenuList,
   MenuItem,
   MenuDivider,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
-  useDisclosure as useDisclosureAlt,
 } from "@chakra-ui/react";
 import {
   FiUsers,
@@ -71,6 +64,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import { User, UserProgress } from "@/types/admin";
 import { adminApi } from "@/lib/adminApi";
 import UserProgressModal from "./UserProgressModal";
+import DeleteConfirmation from "./DeleteConfirmation";
 
 export default function UserManagement() {
   const cardBg = useColorModeValue("white", "gray.800");
@@ -95,9 +89,9 @@ export default function UserManagement() {
   const [refreshingUsers, setRefreshingUsers] = useState<Set<string>>(new Set());
   const [pollingIntervals, setPollingIntervals] = useState<Map<string, NodeJS.Timeout>>(new Map());
   const [recentPasswordChanges, setRecentPasswordChanges] = useState<Set<string>>(new Set());
-  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosureAlt();
+  const { isOpen: isDeleteOpen, onOpen: onDeleteOpen, onClose: onDeleteClose } = useDisclosure();
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
-  const cancelRef = useRef<HTMLButtonElement>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const loadUsers = useCallback(async () => {
     try {
@@ -394,6 +388,7 @@ export default function UserManagement() {
   const handleDeleteUser = async () => {
     if (!userToDelete) return;
     
+    setIsDeleting(true);
     try {
       await adminApi.deleteUser(userToDelete.id);
       
@@ -411,13 +406,9 @@ export default function UserManagement() {
       setUserToDelete(null);
       onDeleteClose();
     } catch (error: any) {
-      toast({
-        title: "Failed to delete user",
-        description: error.message || "Unable to delete user",
-        status: "error",
-        duration: 4000,
-        isClosable: true,
-      });
+      throw error; // Let DeleteConfirmation handle the error
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -810,30 +801,15 @@ export default function UserManagement() {
         </Modal>
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog
+        <DeleteConfirmation
           isOpen={isDeleteOpen}
           onClose={onDeleteClose}
-          leastDestructiveRef={cancelRef}
-        >
-          <AlertDialogOverlay>
-            <AlertDialogContent>
-              <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                Delete User
-              </AlertDialogHeader>
-              <AlertDialogBody>
-                Are you sure you want to delete {userToDelete?.name}? This action cannot be undone.
-              </AlertDialogBody>
-              <AlertDialogFooter>
-                <Button ref={cancelRef} onClick={onDeleteClose}>
-                  Cancel
-                </Button>
-                <Button colorScheme="red" onClick={handleDeleteUser} ml={3}>
-                  Delete
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogOverlay>
-        </AlertDialog>
+          onConfirm={handleDeleteUser}
+          title="Delete User"
+          message="Are you sure you want to delete this user? This action cannot be undone and will remove all associated data including progress and records."
+          itemName={userToDelete?.name}
+          isLoading={isDeleting}
+        />
 
       </VStack>
     </Box>

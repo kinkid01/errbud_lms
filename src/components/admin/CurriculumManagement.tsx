@@ -21,12 +21,6 @@ import {
   ModalBody,
   ModalCloseButton,
   useDisclosure,
-  AlertDialog,
-  AlertDialogBody,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogContent,
-  AlertDialogOverlay,
   Divider,
   Accordion,
   AccordionItem,
@@ -63,6 +57,7 @@ import { curriculumApi } from "@/lib/curriculumApi";
 import CurriculumForm from "./CurriculumForm";
 import QuizManager from "./QuizManager";
 import LessonPreviewModal from "./LessonPreviewModal";
+import DeleteConfirmation from "./DeleteConfirmation";
 
 interface CurriculumManagementProps {
   course: Course;
@@ -490,32 +485,15 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
         )}
 
         {/* Delete Confirmation Dialog */}
-        <AlertDialog
+        <DeleteConfirmation
           isOpen={isDeleteAlertOpen}
-          leastDestructiveRef={cancelRef}
           onClose={onDeleteAlertClose}
-        >
-          <AlertDialogOverlay>
-            <AlertDialogContent>
-              <AlertDialogHeader fontSize="lg" fontWeight="bold">
-                Delete Lesson
-              </AlertDialogHeader>
-
-              <AlertDialogBody>
-                Are you sure you want to delete "{selectedCurriculum?.title}"? This action cannot be undone and will also remove the associated quiz and any user progress.
-              </AlertDialogBody>
-
-              <AlertDialogFooter>
-                <Button ref={cancelRef} onClick={onDeleteAlertClose}>
-                  Cancel
-                </Button>
-                <Button colorScheme="red" onClick={confirmDelete} ml={3}>
-                  Delete
-                </Button>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialogOverlay>
-        </AlertDialog>
+          onConfirm={confirmDelete}
+          title="Delete Lesson"
+          message="Are you sure you want to delete this lesson? This action cannot be undone and will also remove the associated quiz and any user progress."
+          itemName={selectedCurriculum?.title}
+          isLoading={false}
+        />
       </VStack>
     </Box>
   );
