@@ -8,9 +8,11 @@ const {
   createExam,
   updateExam,
   submitExam,
+  checkEligibility,
 } = require('../controllers/examController');
 
 router.get('/',         protect, requireRole('admin'), getExamForAdmin);
+router.get('/eligibility', protect, requireRole('student'), checkEligibility);
 router.get('/student',  protect, requireRole('student'), getExamForStudent);
 router.post('/',        protect, requireRole('admin'), createExam);
 router.put('/',         protect, requireRole('admin'), updateExam);

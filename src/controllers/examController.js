@@ -1,6 +1,76 @@
 const FinalExam = require('../models/FinalExam');
 const Certificate = require('../models/Certificate');
 const Progress = require('../models/Progress');
+const Module = require('../models/Module');
+
+// Helper function to check exam eligibility
+const checkExamEligibility = async (studentId) => {
+  try {
+    // Get all active modules
+    const allActiveModules = await Module.find({ status: 'active' });
+    
+    if (allActiveModules.length === 0) {
+      return {
+        eligible: false,
+        reasons: ['No active modules available']
+      };
+    }
+
+    // Get student's progress for all modules
+    const studentProgress = await Progress.find({ 
+      studentId,
+      moduleId: { $in: allActiveModules.map(m => m._id) }
+    });
+
+    const reasons = [];
+    let eligible = true;
+
+    // Check if student completed all active modules
+    const completedModules = studentProgress.filter(p => p.status === 'completed');
+    if (completedModules.length < allActiveModules.length) {
+      eligible = false;
+      const missingModules = allActiveModules.length - completedModules.length;
+      reasons.push(`Must complete all ${allActiveModules.length} active modules (${missingModules} remaining)`);
+    }
+
+    // Check if all module quizzes passed (>= 60% score)
+    const failedQuizzes = studentProgress.filter(p => 
+      p.quizScore !== null && p.quizScore < 60
+    );
+    
+    if (failedQuizzes.length > 0) {
+      eligible = false;
+      reasons.push(`Must pass all module quizzes with 60% or higher (${failedQuizzes.length} quizzes need retaking)`);
+    }
+
+    // Check for modules without quiz scores (course-level quizzes)
+    const modulesWithoutQuizScores = studentProgress.filter(p => 
+      p.status === 'completed' && (p.quizScore === null || p.quizScore === undefined)
+    );
+    
+    if (modulesWithoutQuizScores.length > 0) {
+      eligible = false;
+      reasons.push(`Must complete all course-level quizzes (${modulesWithoutQuizScores.length} quizzes missing)`);
+    }
+
+    return {
+      eligible,
+      reasons,
+      details: {
+        totalModules: allActiveModules.length,
+        completedModules: completedModules.length,
+        passedQuizzes: studentProgress.filter(p => p.quizScore >= 60).length,
+        failedQuizzes: failedQuizzes.length
+      }
+    };
+  } catch (error) {
+    console.error('Eligibility check error:', error);
+    return {
+      eligible: false,
+      reasons: ['Error checking eligibility']
+    };
+  }
+};
 
 // GET /api/exam  (admin — includes correct answers)
 const getExamForAdmin = async (req, res) => {
@@ -12,9 +82,34 @@ const getExamForAdmin = async (req, res) => {
   }
 };
 
+// GET /api/exam/eligibility
+const checkEligibility = async (req, res) => {
+  try {
+    const eligibility = await checkExamEligibility(req.user._id);
+    res.status(200).json({ 
+      success: true, 
+      data: eligibility 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // GET /api/exam/student  (student — correct answers stripped out)
 const getExamForStudent = async (req, res) => {
   try {
+    // Check eligibility first
+    const eligibility = await checkExamEligibility(req.user._id);
+    
+    if (!eligibility.eligible) {
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Not eligible for exam',
+        reasons: eligibility.reasons,
+        details: eligibility.details
+      });
+    }
+
     const exam = await FinalExam.findOne();
     if (!exam) return res.status(404).json({ success: false, message: 'Exam not set up yet' });
 
@@ -104,4 +199,4 @@ const submitExam = async (req, res) => {
   }
 };
 
-module.exports = { getExamForAdmin, getExamForStudent, createExam, updateExam, submitExam };
+module.exports = { getExamForAdmin, getExamForStudent, createExam, updateExam, submitExam, checkEligibility };
