@@ -86,32 +86,47 @@ const deleteModule = async (req, res) => {
 const updateModuleQuiz = async (req, res) => {
   try {
     const { quiz } = req.body;
+    
+    // Validate that quiz exists
+    if (!quiz) {
+      return res.status(400).json({ 
+        message: 'Quiz data is required',
+        success: false 
+      });
+    }
+    
+    // Create safe quiz object with proper defaults
+    const courseQuiz = {
+      id: quiz.id || `course-${req.params.courseId}-quiz`,
+      courseId: req.params.courseId,
+      questions: quiz.questions || [],
+      passingScore: quiz.passingScore || 60
+    };
+    
     const course = await Module.findByIdAndUpdate(
       req.params.courseId,
-      { 
-        quiz: {
-          ...quiz,
-          id: quiz.id || `course-${req.params.courseId}-quiz`,
-          courseId: req.params.courseId
-        }
-      },
+      { quiz: courseQuiz },
       { new: true, runValidators: true }
     );
     
     if (!course) {
-      return res.status(404).json({ success: false, message: 'Course not found' });
+      return res.status(404).json({ 
+        message: 'Course not found',
+        success: false 
+      });
     }
     
-    res.status(200).json({ 
+    res.json({ 
       success: true, 
       message: 'Course quiz updated successfully',
       data: course 
     });
   } catch (error) {
+    console.error('Quiz update error:', error); // Add logging
     res.status(500).json({ 
-      success: false,
       message: 'Error updating course quiz', 
-      error: error.message 
+      error: error.message,
+      success: false
     });
   }
 };

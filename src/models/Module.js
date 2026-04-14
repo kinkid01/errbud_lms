@@ -26,8 +26,8 @@ const moduleSchema = new mongoose.Schema(
     },
     // Add course-level quiz
     quiz: {
-      id: { type: String, default: function() { return `course-${this._id}-quiz`; } },
-      courseId: { type: String, default: function() { return this._id; } },
+      id: String,
+      courseId: String,
       questions: [{
         id: String,
         text: String,
