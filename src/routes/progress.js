@@ -8,6 +8,7 @@ const {
   enrollInModule,
   completeLessonAndSubmitQuiz,
   canTakeExam,
+  completeCourseQuiz,
 } = require('../controllers/progressController');
 
 router.get('/me',                          protect, getMyProgress);
@@ -15,5 +16,6 @@ router.get('/user/:userId',                protect, requireRole('admin'), getUse
 router.post('/enroll/:moduleId',           protect, requireRole('student'), enrollInModule);
 router.put('/lesson/:lessonId/complete',   protect, requireRole('student'), completeLessonAndSubmitQuiz);
 router.get('/can-take-exam',               protect, requireRole('student'), canTakeExam);
+router.put('/course/:courseId/complete',   protect, requireRole('student'), completeCourseQuiz);
 
 module.exports = router;

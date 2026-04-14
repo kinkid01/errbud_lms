@@ -117,4 +117,48 @@ const canTakeExam = async (req, res) => {
   }
 };
 
-module.exports = { getMyProgress, getUserProgress, enrollInModule, completeLessonAndSubmitQuiz, canTakeExam };
+// PUT /api/progress/course/:courseId/complete
+const completeCourseQuiz = async (req, res) => {
+  try {
+    const { quizScore } = req.body;
+    const userId = req.user._id; // Assuming auth middleware sets user
+    
+    // Find or create user progress for this course
+    let progress = await Progress.findOne({ 
+      studentId: userId, 
+      moduleId: req.params.courseId 
+    });
+    
+    if (!progress) {
+      progress = new Progress({
+        studentId: userId,
+        moduleId: req.params.courseId,
+        status: 'not_started',
+        enrolledAt: new Date()
+      });
+    }
+    
+    // Update quiz score and status
+    progress.quizScore = quizScore;
+    progress.status = quizScore >= 60 ? 'completed' : 'in_progress';
+    if (quizScore >= 60) {
+      progress.completedAt = new Date();
+    }
+    
+    await progress.save();
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Course progress updated successfully',
+      data: progress 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: 'Error updating course progress', 
+      error: error.message 
+    });
+  }
+};
+
+module.exports = { getMyProgress, getUserProgress, enrollInModule, completeLessonAndSubmitQuiz, canTakeExam, completeCourseQuiz };

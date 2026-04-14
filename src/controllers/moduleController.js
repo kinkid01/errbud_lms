@@ -7,7 +7,9 @@ const getAllModules = async (req, res) => {
   try {
     // Admins see all; students only see active modules
     const filter = req.user.role === 'admin' ? {} : { status: 'active' };
-    const modules = await Module.find(filter).sort({ createdAt: -1 });
+    const modules = await Module.find(filter)
+      .select('title description coverImage status createdAt updatedAt quiz createdBy')
+      .sort({ createdAt: -1 });
 
     // Count enrollments per module in one aggregation query
     const enrollmentCounts = await Progress.aggregate([
@@ -80,4 +82,38 @@ const deleteModule = async (req, res) => {
   }
 };
 
-module.exports = { getAllModules, getModuleById, createModule, updateModule, deleteModule };
+// PUT /api/modules/:courseId/quiz
+const updateModuleQuiz = async (req, res) => {
+  try {
+    const { quiz } = req.body;
+    const course = await Module.findByIdAndUpdate(
+      req.params.courseId,
+      { 
+        quiz: {
+          ...quiz,
+          id: quiz.id || `course-${req.params.courseId}-quiz`,
+          courseId: req.params.courseId
+        }
+      },
+      { new: true, runValidators: true }
+    );
+    
+    if (!course) {
+      return res.status(404).json({ success: false, message: 'Course not found' });
+    }
+    
+    res.status(200).json({ 
+      success: true, 
+      message: 'Course quiz updated successfully',
+      data: course 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      success: false,
+      message: 'Error updating course quiz', 
+      error: error.message 
+    });
+  }
+};
+
+module.exports = { getAllModules, getModuleById, createModule, updateModule, deleteModule, updateModuleQuiz };

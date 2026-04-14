@@ -37,6 +37,7 @@ const progressSchema = new mongoose.Schema(
     },
     lessonProgress: [lessonProgressSchema],
     finalExamScore: { type: Number, default: null },
+    quizScore: { type: Number, default: null }, // Course-level quiz score
     certificateIssued: { type: Boolean, default: false },
     enrolledAt: { type: Date, default: Date.now },
     completedAt: { type: Date, default: null },

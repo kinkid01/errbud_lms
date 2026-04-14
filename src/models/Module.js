@@ -24,6 +24,18 @@ const moduleSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User', // References the admin who created it
     },
+    // Add course-level quiz
+    quiz: {
+      id: { type: String, default: function() { return `course-${this._id}-quiz`; } },
+      courseId: { type: String, default: function() { return this._id; } },
+      questions: [{
+        id: String,
+        text: String,
+        options: [String],
+        correctAnswer: { type: Number, default: 0 }
+      }],
+      passingScore: { type: Number, default: 60 }
+    }
   },
   { timestamps: true }
 );
