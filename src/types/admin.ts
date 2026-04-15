@@ -20,6 +20,7 @@ export interface Course {
   createdAt: string;
   updatedAt: string;
   curriculums: Curriculum[];
+  quiz: CourseQuiz;
 }
 
 export interface Curriculum {
@@ -37,6 +38,13 @@ export interface Curriculum {
 export interface Quiz {
   id: string;
   curriculumId: string;
+  questions: Question[];
+  passingScore: number; // default 60
+}
+
+export interface CourseQuiz {
+  id: string;
+  courseId: string;
   questions: Question[];
   passingScore: number; // default 60
 }

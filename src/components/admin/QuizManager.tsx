@@ -37,35 +37,35 @@ import {
   FiX,
 } from "react-icons/fi";
 import { useEffect, useState } from "react";
-import { Curriculum, Quiz, Question } from "@/types/admin";
+import { Curriculum, Quiz, Question, Course, CourseQuiz } from "@/types/admin";
 
 interface QuizManagerProps {
   isOpen: boolean;
   onClose: () => void;
-  curriculum: Curriculum;
-  onSubmit: (quiz: Quiz) => void;
+  course: Course;
+  onSubmit: (quiz: CourseQuiz) => void;
 }
 
 const QuizManager: React.FC<QuizManagerProps> = ({
   isOpen,
   onClose,
-  curriculum,
+  course,
   onSubmit,
 }) => {
   const toast = useToast();
   const cardBg = useColorModeValue("white", "gray.800");
   const borderColor = useColorModeValue("gray.200", "gray.700");
   
-  const [quiz, setQuiz] = useState<Quiz>(curriculum.quiz);
+  const [quiz, setQuiz] = useState<CourseQuiz>(course.quiz);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
-      setQuiz(curriculum.quiz);
+      setQuiz(course.quiz);
       setEditingQuestion(null);
     }
-  }, [isOpen, curriculum]);
+  }, [isOpen, course]);
 
   const handleAddQuestion = () => {
     const newQuestion: Question = {
@@ -187,7 +187,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({
         <ModalHeader>
           <Heading size="lg">Quiz Manager</Heading>
           <Text color="gray.600" fontSize="sm">
-            {curriculum.title} - {quiz.questions.length} questions
+            {course.title} - {quiz.questions.length} questions
           </Text>
         </ModalHeader>
         <ModalCloseButton />

@@ -37,14 +37,16 @@ interface ProgressRecord {
 export default function CoursesPage() {
   const [modules, setModules] = useState<Module[]>([]);
   const [progressMap, setProgressMap] = useState<Record<string, ProgressRecord>>({});
+  const [examEligible, setExamEligible] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function load() {
       try {
-        const [modulesRes, progressRes] = await Promise.all([
+        const [modulesRes, progressRes, eligibilityRes] = await Promise.all([
           api.get('/modules'),
           api.get('/progress/me'),
+          api.get('/exam/eligibility').catch(() => ({ data: { eligible: true } })) // Assume eligible if endpoint doesn't exist
         ]);
 
         setModules(
@@ -59,6 +61,8 @@ export default function CoursesPage() {
           map[mid] = { moduleId: mid, status: p.status, lessonProgress: p.lessonProgress ?? [] };
         });
         setProgressMap(map);
+        
+        setExamEligible(eligibilityRes.data.eligible || false);
       } finally {
         setLoading(false);
       }
@@ -187,20 +191,29 @@ export default function CoursesPage() {
         </Grid>
 
         {/* Final Exam CTA */}
-        <Card borderRadius="xl" bg="blue.600" color="white" boxShadow="md">
+        <Card borderRadius="xl" bg={examEligible ? "blue.600" : "gray.400"} color="white" boxShadow="md">
           <CardBody p={6}>
             <HStack justify="space-between" align="center" flexWrap="wrap" gap={4}>
               <VStack align="start" spacing={1}>
-                <Heading size="md">Ready for the Final Exam?</Heading>
+                <Heading size="md">{examEligible ? "Ready for the Final Exam?" : "Final Exam Locked"}</Heading>
                 <Text fontSize="sm" opacity={0.85}>
-                  Complete all modules, then take 20 questions to earn your certificate.
+                  {examEligible 
+                    ? "Complete all modules, then take 20 questions to earn your certificate."
+                    : "Complete all module quizzes with passing scores to unlock the final exam."
+                  }
                 </Text>
               </VStack>
-              <Link href="/final-exam">
-                <Button bg="white" color="blue.600" _hover={{ bg: "blue.50" }} borderRadius="xl" px={6}>
-                  Take Final Exam
+              {examEligible ? (
+                <Link href="/final-exam">
+                  <Button bg="white" color="blue.600" _hover={{ bg: "blue.50" }} borderRadius="xl" px={6}>
+                    Take Final Exam
+                  </Button>
+                </Link>
+              ) : (
+                <Button isDisabled bg="gray.300" color="gray.500" borderRadius="xl" px={6}>
+                  Complete Quizzes First
                 </Button>
-              </Link>
+              )}
             </HStack>
           </CardBody>
         </Card>

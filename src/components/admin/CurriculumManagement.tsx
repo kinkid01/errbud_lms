@@ -54,6 +54,7 @@ import {
 import { useEffect, useState, useCallback, useRef } from "react";
 import { Curriculum, Course } from "@/types/admin";
 import { curriculumApi } from "@/lib/curriculumApi";
+import { adminApi } from "@/lib/adminApi";
 import CurriculumForm from "./CurriculumForm";
 import QuizManager from "./QuizManager";
 import LessonPreviewModal from "./LessonPreviewModal";
@@ -118,11 +119,7 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
     onDeleteAlertOpen();
   };
 
-  const handleManageQuiz = (curriculum: Curriculum) => {
-    setSelectedCurriculum(curriculum);
-    setIsManagingQuiz(true);
-  };
-
+  
   const handlePreview = (curriculum: Curriculum) => {
     setSelectedCurriculum(curriculum);
     setIsPreviewOpen(true);
@@ -222,23 +219,20 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
   };
 
   const handleQuizUpdate = async (quiz: any) => {
-    if (!selectedCurriculum) return;
-
     try {
-      await curriculumApi.updateQuiz(selectedCurriculum.id, quiz);
+      await adminApi.updateCourseQuiz(course.id, quiz);
       toast({
         title: "Quiz updated",
-        description: "Quiz has been updated successfully",
+        description: "Module quiz has been updated successfully",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
-      await loadCurriculums();
       setIsManagingQuiz(false);
     } catch (error) {
       toast({
         title: "Error updating quiz",
-        description: "Failed to update quiz",
+        description: "Failed to update module quiz",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -275,6 +269,13 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
           >
             Add Lesson
           </Button>
+          <Button
+            leftIcon={<FiHelpCircle />}
+            colorScheme="green"
+            onClick={() => setIsManagingQuiz(true)}
+          >
+            Set Quiz
+          </Button>
         </Flex>
 
         {/* Stats */}
@@ -296,8 +297,8 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
                 <Icon as={FiHelpCircle} boxSize={8} color="green.500" />
                 <Text>
                   <Text as="span" fontWeight="bold">
-                    {curriculums.reduce((acc, c) => acc + c.quiz.questions.length, 0)}
-                  </Text> Total Questions
+                    {course.quiz.questions.length}
+                  </Text> Module Questions
                 </Text>
               </HStack>
             </CardBody>
@@ -356,14 +357,7 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
                         >
                           <FiChevronDown />
                         </Button>
-                        <Button
-                          size="sm"
-                          onClick={() => handleManageQuiz(curriculum)}
-                          variant="outline"
-                        >
-                          <FiHelpCircle /> Quiz ({curriculum.quiz.questions.length})
-                        </Button>
-                        <Button
+                                                <Button
                           size="sm"
                           onClick={() => handlePreview(curriculum)}
                           colorScheme="purple"
@@ -475,14 +469,12 @@ export default function CurriculumManagement({ course, onBack }: CurriculumManag
         )}
 
         {/* Quiz Manager Modal */}
-        {selectedCurriculum && (
-          <QuizManager
-            isOpen={isManagingQuiz}
-            onClose={() => setIsManagingQuiz(false)}
-            curriculum={selectedCurriculum}
-            onSubmit={handleQuizUpdate}
-          />
-        )}
+        <QuizManager
+          isOpen={isManagingQuiz}
+          onClose={() => setIsManagingQuiz(false)}
+          course={course}
+          onSubmit={handleQuizUpdate}
+        />
 
         {/* Delete Confirmation Dialog */}
         <DeleteConfirmation

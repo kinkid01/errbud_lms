@@ -77,7 +77,7 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                 <div
                   style={{
                     position: "absolute",
-                    top: "39%",
+                    top: "38%",
                     left: "50%",
                     transform: "translateX(-50%)",
                     width: "70%",
@@ -86,12 +86,10 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                 >
                   <span
                     style={{
-                      fontFamily: "'Georgia', 'Times New Roman', serif",
+                      fontFamily: "'Arial', sans-serif",
                       fontSize: "clamp(18px, 3.2vw, 42px)",
-                      fontStyle: "italic",
-                      fontWeight: "700",
+                      fontWeight: "600",
                       color: "#1a2b5e",
-                      letterSpacing: "1px",
                       whiteSpace: "nowrap",
                     }}
                   >

@@ -236,28 +236,25 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
   const lessonIdsWithQuiz = useRef<string[]>([]);
 
   useEffect(() => {
-    api.get(`/lessons/module/${courseId}`)
+    // Fetch course-level quiz instead of lesson-level quizzes
+    api.get(`/modules/${courseId}`)
       .then((res) => {
-        const lessons: any[] = res.data.data;
+        const course = res.data.data;
         const allQuestions: QuizQuestion[] = [];
-        const lessonIds: string[] = [];
 
-        for (const lesson of lessons) {
-          if (lesson.quiz?.questions?.length) {
-            lessonIds.push(String(lesson._id ?? lesson.id));
-            for (const q of lesson.quiz.questions) {
-              allQuestions.push({
-                id: String(q._id ?? Math.random()),
-                question: q.text,
-                options: q.options ?? [],
-                correctAnswer: q.correctAnswer ?? 0,
-                category: lesson.title,
-              });
-            }
+        if (course.quiz?.questions?.length) {
+          for (const q of course.quiz.questions) {
+            allQuestions.push({
+              id: String(q._id ?? Math.random()),
+              question: q.text,
+              options: q.options ?? [],
+              correctAnswer: q.correctAnswer ?? 0,
+              category: course.title,
+            });
           }
         }
 
-        lessonIdsWithQuiz.current = lessonIds;
+        lessonIdsWithQuiz.current = [courseId]; // Store course ID for progress tracking
         setQuestions(allQuestions);
         setAnswers(new Array(allQuestions.length).fill(-1));
       })
@@ -291,12 +288,10 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
     setScore(finalScore);
     setSubmitted(true);
 
-    // Save quiz score to backend for each lesson that had quiz questions
-    for (const lessonId of lessonIdsWithQuiz.current) {
-      api
-        .put(`/progress/lesson/${lessonId}/complete`, { quizScore: Math.round(finalScore) })
-        .catch(() => {});
-    }
+    // Save quiz score to backend for course-level progress
+    api
+      .put(`/progress/course/${courseId}/complete`, { quizScore: Math.round(finalScore) })
+      .catch(() => {});
   };
 
   useEffect(() => {

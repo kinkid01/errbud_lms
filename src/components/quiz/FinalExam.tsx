@@ -27,6 +27,7 @@ import {
   FiArrowRight,
   FiClock,
   FiBookOpen,
+  FiLock,
 } from "react-icons/fi";
 import Link from "next/link";
 import api from "@/lib/api";
@@ -151,7 +152,7 @@ function ResultsScreen({ score, passed, passingScore, onRetry }: {
               )}
               {!passed && (
                 <Text color="gray.400" fontSize="sm" textAlign="center" maxW="320px">
-                  Don't worry — review your modules and try again. You need {passingScore}% to pass.
+                  Don&apos;t worry - review your modules and try again. You need {passingScore}% to pass.
                 </Text>
               )}
             </VStack>
@@ -194,13 +195,42 @@ const FinalExam: React.FC = () => {
   const [passingScore, setPassingScore] = useState(60);
   const [current, setCurrent] = useState(0);
   const [timeLeft, setTimeLeft] = useState(EXAM_SECONDS);
+  const [ineligible, setIneligible] = useState(false);
+  const [ineligibilityReason, setIneligibilityReason] = useState('');
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const handleSubmitRef = useRef<(() => void) | null>(null);
 
-  // ── Load questions from backend ───────────────────────────────────────────
+  // ── Load questions from backend ───────────────────────────────────────────// Check exam eligibility first, then load questions
   useEffect(() => {
-    api.get('/exam/student')
-      .then((res) => {
+    const loadExam = async () => {
+      try {
+        // First check if student is eligible for exam
+        let eligible = true;
+        let reason = '';
+        
+        try {
+          const eligibilityRes = await api.get('/exam/eligibility');
+          if (!eligibilityRes.data.eligible) {
+            eligible = false;
+            reason = (eligibilityRes.data.reasons?.[0] || eligibilityRes.data.reason) || 'You must complete all module quizzes before taking the final exam.';
+          }
+        } catch (eligibilityError: any) {
+          // If eligibility endpoint doesn't exist (404), assume eligible for now
+          // TODO: Remove this fallback once backend endpoint is implemented
+          if (eligibilityError.response?.status !== 404) {
+            throw eligibilityError;
+          }
+        }
+
+        if (!eligible) {
+          setIneligible(true);
+          setIneligibilityReason(reason);
+          setLoading(false);
+          return;
+        }
+
+        // If eligible, load exam questions
+        const res = await api.get('/exam/student');
         const data = res.data.data;
         const qs: ExamQuestion[] = (data?.questions ?? []).map((q: any) => ({
           id: String(q._id),
@@ -210,9 +240,18 @@ const FinalExam: React.FC = () => {
         setQuestions(qs);
         setAnswers(new Array(qs.length).fill(-1));
         setPassingScore(data?.passingScore ?? 60);
-      })
-      .catch(() => {})
-      .finally(() => setLoading(false));
+      } catch (error: any) {
+        if (error.response?.status === 403) {
+          setIneligible(true);
+          setIneligibilityReason((error.response.data?.reasons?.[0] || error.response.data?.reason) || 'You must complete all module quizzes before taking the final exam.');
+        } else {
+          // Other error - will show no exam available message
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadExam();
   }, []);
 
   // ── Start timer once questions are loaded ─────────────────────────────────
@@ -276,6 +315,33 @@ const FinalExam: React.FC = () => {
       <Center minH="60vh">
         <Spinner size="xl" color="blue.500" />
       </Center>
+    );
+  }
+
+  if (ineligible) {
+    return (
+      <Box p={8} textAlign="center" maxW="500px" mx="auto">
+        <Card borderRadius="2xl" boxShadow="sm">
+          <CardBody p={8}>
+            <VStack spacing={4} align="center">
+              <Box w="64px" h="64px" borderRadius="full" bg="red.100" display="flex" alignItems="center" justifyContent="center">
+                <Icon as={FiLock} boxSize={8} color="red.500" />
+              </Box>
+              <VStack spacing={2} align="center">
+                <Heading size="lg" color="red.600">Not Eligible for Final Exam</Heading>
+                <Text color="gray.600" fontSize="md" textAlign="center">
+                  {ineligibilityReason}
+                </Text>
+              </VStack>
+              <Link href="/courses">
+                <Button colorScheme="blue" borderRadius="xl" leftIcon={<FiBookOpen />}>
+                  Back to Modules
+                </Button>
+              </Link>
+            </VStack>
+          </CardBody>
+        </Card>
+      </Box>
     );
   }
 

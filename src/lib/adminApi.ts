@@ -1,5 +1,5 @@
 import api, { normalize } from './api';
-import { AdminStats, User, Course, UserProgress, Certificate } from '@/types/admin';
+import { AdminStats, User, Course, UserProgress, Certificate, CourseQuiz } from '@/types/admin';
 
 function toCourse(doc: any): Course {
   const n = normalize(doc);
@@ -12,6 +12,12 @@ function toCourse(doc: any): Course {
     createdAt: n.createdAt,
     updatedAt: n.updatedAt,
     curriculums: n.lessons ?? [],
+    quiz: {
+      id: n.quiz?.id ?? `course-${n.id}-quiz`,
+      courseId: n.id,
+      questions: n.quiz?.questions ?? [],
+      passingScore: n.quiz?.passingScore ?? 60,
+    },
   };
 }
 
@@ -139,6 +145,10 @@ export const adminApi = {
 
   async deleteCourse(id: string): Promise<void> {
     await api.delete(`/modules/${id}`);
+  },
+
+  async updateCourseQuiz(courseId: string, quiz: any): Promise<void> {
+    await api.put(`/modules/${courseId}/quiz`, { quiz });
   },
 
   async getCertificates(): Promise<Certificate[]> {
