@@ -18,8 +18,8 @@ const checkExamEligibility = async (studentId) => {
       'quiz.questions.0': { $exists: true } // Only modules with at least 1 quiz question
     });
  
-    console.log(`Student completed modules: ${progress.length}`);
-    console.log(`Modules requiring quizzes: ${modulesWithQuizzes.length}`);
+    console.log(`[ELIGIBILITY] Student completed modules: ${progress.length}`);
+    console.log(`[ELIGIBILITY] Modules requiring quizzes: ${modulesWithQuizzes.length}`);
  
     // Check if student completed all modules that have quizzes
     if (progress.length !== modulesWithQuizzes.length) {
@@ -44,7 +44,7 @@ const checkExamEligibility = async (studentId) => {
  
     return { eligible: true, reason: "All requirements met" };
   } catch (error) {
-    console.error('Eligibility check error:', error);
+    console.error('[ELIGIBILITY] Error:', error);
     return {
       eligible: false,
       reason: "Error checking eligibility"
@@ -68,6 +68,7 @@ const checkEligibility = async (req, res) => {
     const eligibility = await checkExamEligibility(req.user._id);
     res.json(eligibility);
   } catch (error) {
+    console.error('[ELIGIBILITY] Endpoint error:', error);
     res.status(500).json({ error: "Failed to check eligibility" });
   }
 };
@@ -105,7 +106,8 @@ const getExamForStudent = async (req, res) => {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error('[ELIGIBILITY] Exam endpoint error:', error);
+    res.status(500).json({ error: "Failed to load exam" });
   }
 };
 
