@@ -9,10 +9,12 @@ const {
   updateExam,
   submitExam,
   checkEligibility,
+  debugEligibility,
 } = require('../controllers/examController');
 
 router.get('/',         protect, requireRole('admin'), getExamForAdmin);
 router.get('/eligibility', protect, requireRole('student'), checkEligibility);
+router.get('/debug-eligibility', protect, requireRole('student'), debugEligibility);
 router.get('/student',  protect, requireRole('student'), getExamForStudent);
 router.post('/',        protect, requireRole('admin'), createExam);
 router.put('/',         protect, requireRole('admin'), updateExam);

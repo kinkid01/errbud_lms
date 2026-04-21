@@ -174,4 +174,95 @@ const submitExam = async (req, res) => {
   }
 };
 
-module.exports = { getExamForAdmin, getExamForStudent, createExam, updateExam, submitExam, checkEligibility };
+// GET /api/exam/debug-eligibility
+const debugEligibility = async (req, res) => {
+  console.log('--- DEBUG EXAM ELIGIBILITY ENDPOINT CALLED ---');
+  const studentId = req.user._id;
+ 
+  try {
+    // 1. Get ALL active modules
+    const allActiveModules = await Module.find({ status: 'active' });
+    console.log(`[DEBUG] Total active modules: ${allActiveModules.length}`);
+    
+    // 2. Get only modules that have quizzes
+    const modulesWithQuizzes = await Module.find({ 
+      status: 'active',
+      'quiz.questions.0': { $exists: true }
+    });
+    console.log(`[DEBUG] Modules with quizzes: ${modulesWithQuizzes.length}`);
+    
+    // 3. Get student's completed progress
+    const progress = await Progress.find({ 
+      studentId: studentId,
+      status: 'completed'
+    }).populate('moduleId');
+    console.log(`[DEBUG] Student progress records: ${progress.length}`);
+    
+    // 4. Check module by module
+    let issues = [];
+    let passedCount = 0;
+    
+    for (const module of modulesWithQuizzes) {
+      const moduleProgress = progress.find(p => 
+        p.moduleId && p.moduleId._id.toString() === module._id.toString()
+      );
+      
+      console.log(`\n[DEBUG] Module: ${module.title}`);
+      console.log(`[DEBUG]   - Has quiz: ${module.quiz?.questions?.length || 0} questions`);
+      console.log(`[DEBUG]   - Progress: ${moduleProgress ? 'found' : 'not found'}`);
+      console.log(`[DEBUG]   - Quiz score: ${moduleProgress?.quizScore || 'N/A'}`);
+      
+      if (!moduleProgress) {
+        issues.push(`"${module.title}": No progress record found`);
+      } else if (!moduleProgress.quizScore) {
+        issues.push(`"${module.title}": Quiz not taken`);
+      } else if (moduleProgress.quizScore < 60) {
+        issues.push(`"${module.title}": Score ${moduleProgress.quizScore}% < 60%`);
+      } else {
+        passedCount++;
+        console.log(`[DEBUG]   - Quiz passed`);
+      }
+    }
+    
+    // 5. Final determination
+    const eligible = issues.length === 0;
+    
+    console.log(`\n[DEBUG] FINAL RESULT:`);
+    console.log(`[DEBUG] - Modules requiring quizzes: ${modulesWithQuizzes.length}`);
+    console.log(`[DEBUG] - Quizzes passed: ${passedCount}`);
+    console.log(`[DEBUG] - Issues found: ${issues.length}`);
+    console.log(`[DEBUG] - Eligible: ${eligible}`);
+    
+    if (issues.length > 0) {
+      console.log(`[DEBUG] Issues:`, issues);
+    }
+    
+    return res.json({
+      eligible,
+      reason: eligible ? "All requirements met" : issues.join('; '),
+      debugInfo: {
+        totalActiveModules: allActiveModules.length,
+        modulesWithQuizzesCount: modulesWithQuizzes.length,
+        studentProgressCount: progress.length,
+        quizzesPassed: passedCount,
+        issues,
+        moduleDetails: modulesWithQuizzes.map(m => ({
+          title: m.title,
+          hasQuiz: m.quiz?.questions?.length > 0,
+          quizQuestions: m.quiz?.questions?.length || 0,
+          progressFound: progress.some(p => p.moduleId && p.moduleId._id.toString() === m._id.toString()),
+          quizScore: progress.find(p => p.moduleId && p.moduleId._id.toString() === m._id.toString())?.quizScore || null
+        }))
+      }
+    });
+    
+  } catch (error) {
+    console.error('[DEBUG] Error:', error);
+    return res.status(500).json({ 
+      error: "Debug endpoint failed",
+      details: error.message 
+    });
+  }
+};
+
+module.exports = { getExamForAdmin, getExamForStudent, createExam, updateExam, submitExam, checkEligibility, debugEligibility };
