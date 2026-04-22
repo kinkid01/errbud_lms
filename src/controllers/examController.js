@@ -267,4 +267,23 @@ const debugEligibility = async (req, res) => {
   }
 };
 
-module.exports = { getExamForAdmin, getExamForStudent, createExam, updateExam, submitExam, checkEligibility, debugEligibility };
+// GET /api/exam/test-eligibility - Simple test endpoint
+const testEligibility = async (req, res) => {
+  try {
+    console.log('[TEST] Eligibility test endpoint called');
+    const eligibility = await checkExamEligibility(req.user._id);
+    console.log('[TEST] Eligibility result:', eligibility);
+    return res.json({
+      message: "Test endpoint working",
+      eligibility: eligibility
+    });
+  } catch (error) {
+    console.error('[TEST] Error:', error);
+    return res.status(500).json({ 
+      error: "Test endpoint failed",
+      details: error.message 
+    });
+  }
+};
+
+module.exports = { getExamForAdmin, getExamForStudent, createExam, updateExam, submitExam, checkEligibility, debugEligibility, testEligibility };
