@@ -65,11 +65,44 @@ const getExamForAdmin = async (req, res) => {
 // GET /api/exam/eligibility
 const checkEligibility = async (req, res) => {
   try {
+    console.log('=== ELIGIBILITY DEBUG START ===');
+    console.log('Student ID:', req.user._id);
+    
+    // Get student's progress
+    const progress = await Progress.find({ 
+      studentId: req.user._id,
+      status: 'completed'
+    }).populate('moduleId');
+    
+    console.log('Student completed modules:', progress.length);
+    progress.forEach(p => {
+      console.log(`  - ${p.moduleId?.title || 'Unknown'} (Quiz Score: ${p.quizScore || 'N/A'})`);
+    });
+ 
+    // Get only modules that have quizzes
+    const modulesWithQuizzes = await Module.find({ 
+      status: 'active',
+      'quiz.questions.0': { $exists: true }
+    });
+    
+    console.log('Modules requiring quizzes:', modulesWithQuizzes.length);
+    modulesWithQuizzes.forEach(m => {
+      console.log(`  - ${m.title} (${m.quiz?.questions?.length || 0} questions)`);
+    });
+ 
+    // Check eligibility
     const eligibility = await checkExamEligibility(req.user._id);
-    res.json(eligibility);
+    
+    console.log('Final eligibility result:', eligibility);
+    console.log('=== ELIGIBILITY DEBUG END ===');
+    
+    return res.json(eligibility);
   } catch (error) {
-    console.error('[ELIGIBILITY] Endpoint error:', error);
-    res.status(500).json({ error: "Failed to check eligibility" });
+    console.error('Eligibility endpoint error:', error);
+    return res.status(500).json({ 
+      eligible: false, 
+      reason: "Error checking eligibility" 
+    });
   }
 };
 
