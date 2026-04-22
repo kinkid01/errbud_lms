@@ -3,54 +3,48 @@ const Certificate = require('../models/Certificate');
 const Progress = require('../models/Progress');
 const Module = require('../models/Module');
 
-// Helper function to check exam eligibility
-const checkExamEligibility = async (studentId) => {
+// Simple eligibility check - just count all active modules
+async function checkExamEligibility(studentId) {
   try {
-    // Get student's progress
+    // Get student's completed progress
     const progress = await Progress.find({ 
       studentId: studentId,
       status: 'completed'
     }).populate('moduleId');
  
-    // Get only modules that have quizzes (exclude introduction modules)
-    const modulesWithQuizzes = await Module.find({ 
-      status: 'active',
-      'quiz.questions.0': { $exists: true } // Only modules with at least 1 quiz question
-    });
+    // Get ALL active modules (now that you'll have 13 total)
+    const activeModules = await Module.find({ status: 'active' });
  
-    console.log(`[ELIGIBILITY] Student completed modules: ${progress.length}`);
-    console.log(`[ELIGIBILITY] Modules requiring quizzes: ${modulesWithQuizzes.length}`);
+    console.log(`Student completed: ${progress.length} modules`);
+    console.log(`Total active modules: ${activeModules.length}`);
  
-    // Check if student completed all modules that have quizzes
-    if (progress.length !== modulesWithQuizzes.length) {
+    // Simple check: student must complete ALL active modules
+    if (progress.length !== activeModules.length) {
       return {
         eligible: false,
-        reason: "Complete all modules with quizzes before taking the final exam"
+        reason: `Complete all ${activeModules.length} modules before taking the final exam` 
       };
     }
  
-    // Check quiz scores for modules that have quizzes
+    // Check quiz scores (60% required)
     for (const p of progress) {
-      // Only check quiz scores if this module actually has a quiz
-      if (p.moduleId.quiz && p.moduleId.quiz.questions && p.moduleId.quiz.questions.length > 0) {
-        if (!p.quizScore || p.quizScore < 60) {
-          return {
-            eligible: false,
-            reason: "You must pass all module quizzes (60% required) before taking the final exam"
-          };
-        }
+      if (!p.quizScore || p.quizScore < 60) {
+        return {
+          eligible: false,
+          reason: "You must pass all module quizzes (60% required) before taking the final exam"
+        };
       }
     }
  
     return { eligible: true, reason: "All requirements met" };
   } catch (error) {
-    console.error('[ELIGIBILITY] Error:', error);
+    console.error('Eligibility error:', error);
     return {
       eligible: false,
       reason: "Error checking eligibility"
     };
   }
-};
+}
 
 // GET /api/exam  (admin — includes correct answers)
 const getExamForAdmin = async (req, res) => {
@@ -65,40 +59,9 @@ const getExamForAdmin = async (req, res) => {
 // GET /api/exam/eligibility
 const checkEligibility = async (req, res) => {
   try {
-    console.log('=== ELIGIBILITY DEBUG START ===');
-    console.log('Student ID:', req.user._id);
-    
-    // Get student's progress
-    const progress = await Progress.find({ 
-      studentId: req.user._id,
-      status: 'completed'
-    }).populate('moduleId');
-    
-    console.log('Student completed modules:', progress.length);
-    progress.forEach(p => {
-      console.log(`  - ${p.moduleId?.title || 'Unknown'} (Quiz Score: ${p.quizScore || 'N/A'})`);
-    });
- 
-    // Get only modules that have quizzes
-    const modulesWithQuizzes = await Module.find({ 
-      status: 'active',
-      'quiz.questions.0': { $exists: true }
-    });
-    
-    console.log('Modules requiring quizzes:', modulesWithQuizzes.length);
-    modulesWithQuizzes.forEach(m => {
-      console.log(`  - ${m.title} (${m.quiz?.questions?.length || 0} questions)`);
-    });
- 
-    // Check eligibility
     const eligibility = await checkExamEligibility(req.user._id);
-    
-    console.log('Final eligibility result:', eligibility);
-    console.log('=== ELIGIBILITY DEBUG END ===');
-    
     return res.json(eligibility);
   } catch (error) {
-    console.error('Eligibility endpoint error:', error);
     return res.status(500).json({ 
       eligible: false, 
       reason: "Error checking eligibility" 
