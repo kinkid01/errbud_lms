@@ -114,7 +114,9 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
         });
 
         setLessons(built);
-        setHasQuiz(raw.some((l: any) => l.quiz?.questions?.length > 0));
+        // Check if the course/module has quiz questions, not individual lessons
+        const courseRes = await api.get(`/modules/${courseId}`);
+        setHasQuiz(courseRes.data.data.quiz?.questions?.length > 0);
 
         // Jump straight to the first uncompleted lesson
         const firstUncompleted = built.findIndex((l) => !l.isCompleted);

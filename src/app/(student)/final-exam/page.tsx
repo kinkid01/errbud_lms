@@ -34,13 +34,20 @@ export default function FinalExamPage() {
   useEffect(() => {
     async function load() {
       try {
-        const [eligRes, modulesRes, progressRes, certRes] = await Promise.all([
-          api.get('/progress/can-take-exam'),
+        const [eligRes, modulesRes, progressRes] = await Promise.all([
+          api.get('/exam/eligibility'), // Use the correct eligibility endpoint
           api.get('/modules'),
           api.get('/progress/me').catch(() => ({ data: { data: [] } })),
-          // Check if student already has a certificate (already passed)
-          api.get('/certificates/mine').catch(() => null),
         ]);
+
+        // Check certificate separately so it doesn't block eligibility
+        let certRes = null;
+        try {
+          certRes = await api.get('/certificates/mine');
+        } catch (error) {
+          // Certificate endpoint can fail - don't block the exam
+          console.log('Certificate check failed (expected):', error instanceof Error ? error.message : String(error));
+        }
 
         // Already passed — don't show exam again
         if (certRes?.data?.data) {
