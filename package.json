@@ -34,6 +34,8 @@
     "axios": "^1.13.6",
     "flatpickr": "^4.6.13",
     "framer-motion": "^12.34.3",
+    "html-to-image": "^1.11.13",
+    "html2canvas": "^1.4.1",
     "next": "^16.1.6",
     "postcss": "^8.5.6",
     "react": "^19.2.0",
