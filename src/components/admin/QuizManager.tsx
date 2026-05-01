@@ -38,6 +38,7 @@ import {
 } from "react-icons/fi";
 import { useEffect, useState } from "react";
 import { Curriculum, Quiz, Question, Course, CourseQuiz } from "@/types/admin";
+import DeleteConfirmation from "./DeleteConfirmation";
 
 interface QuizManagerProps {
   isOpen: boolean;
@@ -59,6 +60,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({
   const [quiz, setQuiz] = useState<CourseQuiz>(course.quiz);
   const [editingQuestion, setEditingQuestion] = useState<Question | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [questionToDelete, setQuestionToDelete] = useState<Question | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -81,11 +83,13 @@ const QuizManager: React.FC<QuizManagerProps> = ({
     setEditingQuestion({ ...question });
   };
 
-  const handleDeleteQuestion = (questionId: string) => {
+  const handleDeleteQuestion = () => {
+    if (!questionToDelete) return;
     setQuiz(prev => ({
       ...prev,
-      questions: prev.questions.filter(q => q.id !== questionId),
+      questions: prev.questions.filter(q => q.id !== questionToDelete.id),
     }));
+    setQuestionToDelete(null);
   };
 
   const handleSaveQuestion = () => {
@@ -181,6 +185,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({
   };
 
   return (
+    <>
     <Modal isOpen={isOpen} onClose={onClose} size="4xl">
       <ModalOverlay />
       <ModalContent>
@@ -262,7 +267,7 @@ const QuizManager: React.FC<QuizManagerProps> = ({
                                 size="sm"
                                 variant="outline"
                                 colorScheme="red"
-                                onClick={() => handleDeleteQuestion(question.id)}
+                                onClick={() => setQuestionToDelete(question)}
                                 isDisabled={editingQuestion !== null}
                               />
                             </HStack>
@@ -389,6 +394,16 @@ const QuizManager: React.FC<QuizManagerProps> = ({
         </ModalFooter>
       </ModalContent>
     </Modal>
+
+    <DeleteConfirmation
+      isOpen={questionToDelete !== null}
+      onClose={() => setQuestionToDelete(null)}
+      onConfirm={handleDeleteQuestion}
+      title="Delete Question"
+      message="This will permanently remove the question from the quiz."
+      itemName={questionToDelete?.text}
+    />
+    </>
   );
 };
 
