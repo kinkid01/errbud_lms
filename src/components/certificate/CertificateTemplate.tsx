@@ -160,7 +160,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
               </span>
             </div>
 
-            {/* 3. Completion date value */}
+            {/* 3. Completion date values */}
             <div style={{ position: "absolute", top: OVERLAY.date.top, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}>
               <span
                 style={{
