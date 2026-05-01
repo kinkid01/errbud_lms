@@ -8,15 +8,10 @@ services:
     startCommand: npm start
     healthCheckPath: /
     autoDeploy: true
-    
+
     # Environment variables (these will be set in Render dashboard)
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 5000
-
-# Optional: Add a PostgreSQL database if needed in the future
-# databases:
-#   - name: errbud-db
-#     plan: free
