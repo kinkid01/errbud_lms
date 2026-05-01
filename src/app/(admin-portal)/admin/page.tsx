@@ -72,8 +72,9 @@ export default function AdminDashboard() {
         const activeModules = modulesRes.data.data.filter((m: any) => m.status === 'active');
         const certs: any[] = certsRes.data.data;
 
+        const certifiedStudentIds = new Set(certs.map((c: any) => c.userId));
         const completionRate = students.length > 0
-          ? Math.round((certs.length / students.length) * 100)
+          ? Math.round((certifiedStudentIds.size / students.length) * 100)
           : 0;
 
         setStats({
