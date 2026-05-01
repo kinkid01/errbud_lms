@@ -169,7 +169,7 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                 </div>
 
                 {/* 3. Completion date value */}
-                <div style={{ position: "absolute", top: OVERLAY.date.top, left: "50%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}>
+                <div style={{ position: "absolute", top: OVERLAY.date.top, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}>
                   <span
                     style={{
                       fontFamily: "'Helvetica Neue', Arial, sans-serif",
