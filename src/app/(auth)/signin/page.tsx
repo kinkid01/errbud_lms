@@ -17,6 +17,7 @@ import {
   Icon,
   useToast,
   Spinner,
+  Link,
 } from "@chakra-ui/react";
 import {
   FiMail,
@@ -40,6 +41,9 @@ export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [isForgotLoading, setIsForgotLoading] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
   const isClient = useIsClient();
 
   const validate = () => {
@@ -53,6 +57,37 @@ export default function SignInPage() {
   const handleChange = (field: string, value: string) => {
     setForm((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) setErrors((prev) => ({ ...prev, [field]: "" }));
+  };
+
+  const handleForgotPassword = async () => {
+    if (!forgotEmail.trim()) return;
+    setIsForgotLoading(true);
+    try {
+      await fetch(`${process.env.NEXT_PUBLIC_API_URL || ""}/api/auth/forgot-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: forgotEmail }),
+      });
+      toast({
+        title: "Email sent",
+        description: "If that email exists, a new password has been sent to it.",
+        status: "success",
+        duration: 5000,
+        isClosable: true,
+      });
+      setShowForgot(false);
+      setForgotEmail("");
+    } catch {
+      toast({
+        title: "Something went wrong",
+        description: "Please try again later.",
+        status: "error",
+        duration: 4000,
+        isClosable: true,
+      });
+    } finally {
+      setIsForgotLoading(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -203,6 +238,46 @@ export default function SignInPage() {
                   </InputGroup>
                   <FormErrorMessage>{errors.password}</FormErrorMessage>
                 </FormControl>
+
+                <Flex justify="flex-end">
+                  <Link
+                    fontSize="xs"
+                    color="blue.500"
+                    onClick={() => setShowForgot(!showForgot)}
+                    cursor="pointer"
+                  >
+                    Forgot password?
+                  </Link>
+                </Flex>
+
+                {showForgot && (
+                  <Box p={4} bg="blue.50" borderRadius="lg" border="1px solid" borderColor="blue.100">
+                    <Text fontSize="sm" color="gray.700" mb={3}>
+                      Enter your email and we&apos;ll send you a new password.
+                    </Text>
+                    <VStack spacing={2} align="stretch">
+                      <Input
+                        type="email"
+                        placeholder="your@email.com"
+                        value={forgotEmail}
+                        onChange={(e) => setForgotEmail(e.target.value)}
+                        bg="white"
+                        borderRadius="lg"
+                        size="sm"
+                      />
+                      <Button
+                        size="sm"
+                        colorScheme="blue"
+                        onClick={handleForgotPassword}
+                        isLoading={isForgotLoading}
+                        loadingText="Sending..."
+                        isDisabled={!forgotEmail.trim()}
+                      >
+                        Send new password
+                      </Button>
+                    </VStack>
+                  </Box>
+                )}
 
                 <Button
                   type="submit"
