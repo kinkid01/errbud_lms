@@ -16,7 +16,7 @@ import {
   Spinner,
   Center,
 } from "@chakra-ui/react";
-import { FiClock, FiBook, FiAward, FiUsers, FiCalendar } from "react-icons/fi";
+import { FiClock, FiBook, FiAward } from "react-icons/fi";
 import Link from "next/link";
 import api, { normalize } from "@/lib/api";
 
@@ -140,17 +140,6 @@ export default function CoursesPage() {
                           <Progress value={pct} colorScheme="blue" borderRadius="full" size="xs" />
                         </Box>
                       )}
-
-                      <HStack spacing={4} color="gray.400" fontSize="xs">
-                        <HStack spacing={1}>
-                          <Icon as={FiCalendar} boxSize={3} />
-                          <Text>{new Date(mod.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}</Text>
-                        </HStack>
-                        <HStack spacing={1}>
-                          <Icon as={FiUsers} boxSize={3} />
-                          <Text>{mod.enrollmentCount}</Text>
-                        </HStack>
-                      </HStack>
 
                       <Link href={`/courses/${mod.id}`}>
                         <Button w="full" colorScheme="blue" borderRadius="xl" size="sm">

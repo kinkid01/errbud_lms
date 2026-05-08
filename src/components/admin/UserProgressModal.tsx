@@ -17,13 +17,6 @@ import {
   Stat,
   StatLabel,
   StatNumber,
-  StatHelpText,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
   Box,
   useColorModeValue,
   Icon,
@@ -32,12 +25,11 @@ import {
 import {
   FiBook,
   FiAward,
-  FiClock,
   FiCheckCircle,
   FiPlay,
   FiTrendingUp,
 } from "react-icons/fi";
-import { User, UserProgress, Course } from "@/types/admin";
+import { User, UserProgress } from "@/types/admin";
 
 interface UserProgressModalProps {
   isOpen: boolean;
@@ -62,11 +54,13 @@ const UserProgressModal: React.FC<UserProgressModalProps> = ({
   const totalCourses = userProgress.length;
   const completedCourses = userProgress.filter(p => p.status === 'completed').length;
   const inProgressCourses = userProgress.filter(p => p.status === 'in_progress').length;
-  const allQuizScores = userProgress.flatMap(p =>
-    p.curriculumProgress
+  const allQuizScores = userProgress.flatMap(p => {
+    const lessonScores = p.curriculumProgress
       .filter(c => c.quizScore != null && c.attempts > 0)
-      .map(c => c.quizScore as number)
-  );
+      .map(c => c.quizScore as number);
+    if (lessonScores.length > 0) return lessonScores;
+    return p.courseQuizScore != null ? [p.courseQuizScore] : [];
+  });
   const averageScore = allQuizScores.length > 0
     ? allQuizScores.reduce((acc, s) => acc + s, 0) / allQuizScores.length
     : null;

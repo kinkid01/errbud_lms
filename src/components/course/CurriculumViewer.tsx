@@ -487,8 +487,7 @@ const CurriculumViewer: React.FC<CurriculumViewerProps> = ({ courseId }) => {
                         alt={`${current.title} — image ${idx + 1}`}
                         borderRadius="xl"
                         w="full"
-                        maxH="400px"
-                        objectFit="cover"
+                        h="auto"
                         boxShadow="sm"
                       />
                     ))}

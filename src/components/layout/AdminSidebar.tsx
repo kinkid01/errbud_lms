@@ -17,6 +17,7 @@ import {
   FiBookOpen,
   FiAward,
   FiClipboard,
+  FiUser,
   FiLogOut,
   FiChevronLeft,
   FiChevronRight,
@@ -33,6 +34,7 @@ const NAV = [
   { label: "Modules", icon: FiBookOpen, href: "/admin/courses" },
   { label: "Exam", icon: FiClipboard, href: "/admin/exam" },
   { label: "Certificates", icon: FiAward, href: "/admin/certificates" },
+  { label: "My Profile", icon: FiUser, href: "/admin/profile" },
 ];
 
 interface Props {

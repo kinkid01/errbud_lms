@@ -1,5 +1,5 @@
 import api, { normalize } from './api';
-import { AdminStats, User, Course, UserProgress, Certificate, CourseQuiz } from '@/types/admin';
+import { AdminStats, User, Course, UserProgress, Certificate } from '@/types/admin';
 
 function toCourse(doc: any): Course {
   const n = normalize(doc);
@@ -121,6 +121,7 @@ export const adminApi = {
         quizScore: lp.quizScore,
         attempts: lp.attempts,
       })),
+      courseQuizScore: p.quizScore ?? undefined,
       finalAssessmentScore: p.finalExamScore,
       certificateIssued: p.certificateIssued,
     }));

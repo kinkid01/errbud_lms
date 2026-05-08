@@ -64,6 +64,7 @@ export interface UserProgress {
   enrolledAt: string;
   completedAt?: string;
   curriculumProgress: CurriculumProgress[];
+  courseQuizScore?: number;
   finalAssessmentScore?: number;
   certificateIssued?: boolean;
 }
