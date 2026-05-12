@@ -12,6 +12,7 @@ import {
   Text,
   HStack,
   VStack,
+  Flex,
   Heading,
   useToast,
 } from "@chakra-ui/react";
@@ -25,13 +26,11 @@ interface CertificatePreviewProps {
   certificate: Certificate | null;
 }
 
-// ─── Tune these to adjust overlay positions in the downloaded image ───────────
 const OVERLAY = {
-  name:   { top: "38%", fontSize: "38px" },
-  certId: { top: "80%", left: "7%",  fontSize: "14px" },
-  date:   { top: "80%", left: "60%", fontSize: "14px" },
+  name:   { top: "38%", fontSize: "38px",  displayFontSize: "min(38px, 4.75vw)" },
+  certId: { top: "80%", left: "7%",  fontSize: "14px", displayFontSize: "clamp(7px, 1.75vw, 14px)" },
+  date:   { top: "80%", left: "60%", fontSize: "14px", displayFontSize: "clamp(7px, 1.75vw, 14px)" },
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
 const CertificatePreview: React.FC<CertificatePreviewProps> = ({
   isOpen,
@@ -48,15 +47,45 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
     try {
       const { toPng } = await import('html-to-image');
 
-      const certificateElement = document.getElementById('certificate-preview-inner');
-      if (!certificateElement) throw new Error('Certificate element not found');
+      const certEl = document.getElementById('certificate-preview-inner') as HTMLElement | null;
+      if (!certEl) throw new Error('Certificate element not found');
 
+      // Clone off-screen at fixed 800px so the live element is never disrupted.
+      // This ensures a consistent output size regardless of device width.
+      const clone = certEl.cloneNode(true) as HTMLElement;
+      clone.removeAttribute('id');
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.width = '800px';
+      clone.style.boxShadow = 'none';
+
+      // Apply fixed font sizes and positions matched to the 800px canvas
+      const nameContainer   = clone.querySelector<HTMLElement>('[data-cert="name-container"]');
+      const nameSpan        = clone.querySelector<HTMLElement>('[data-cert="name"]');
+      const certIdContainer = clone.querySelector<HTMLElement>('[data-cert="certid-container"]');
+      const certIdSpan      = clone.querySelector<HTMLElement>('[data-cert="certid"]');
+      const dateContainer   = clone.querySelector<HTMLElement>('[data-cert="date-container"]');
+      const dateSpan        = clone.querySelector<HTMLElement>('[data-cert="date"]');
+
+      if (nameContainer)   nameContainer.style.top   = OVERLAY.name.top;
+      if (nameSpan)        nameSpan.style.fontSize    = OVERLAY.name.fontSize;
+      if (certIdContainer) certIdContainer.style.top = OVERLAY.certId.top;
+      if (certIdSpan)      certIdSpan.style.fontSize  = OVERLAY.certId.fontSize;
+      if (dateContainer)   dateContainer.style.top   = OVERLAY.date.top;
+      if (dateSpan)        dateSpan.style.fontSize    = OVERLAY.date.fontSize;
+
+      document.body.appendChild(clone);
       await document.fonts.ready;
+      // Two rAF frames to ensure the browser has fully laid out the clone
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
-      const dataUrl = await toPng(certificateElement, {
+      const dataUrl = await toPng(clone, {
         pixelRatio: 2,
         skipAutoScale: true,
       });
+
+      document.body.removeChild(clone);
 
       const link = document.createElement('a');
       link.download = `certificate-${certificate.certificateId.slice(-12).toUpperCase()}.png`;
@@ -85,20 +114,20 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="5xl">
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", md: "5xl" }}>
       <ModalOverlay />
       <ModalContent>
         <ModalHeader>
           <VStack align="start" spacing={0}>
             <Heading size="md">Certificate Preview</Heading>
-            <Text fontSize="xs" color="gray.400" fontFamily="mono">
+            <Text fontSize="xs" color="gray.400" fontFamily="mono" isTruncated maxW="90%">
               ID: {certificate.certificateId}
             </Text>
           </VStack>
         </ModalHeader>
         <ModalCloseButton />
+
         <ModalBody pb={4}>
-          {/* Certificate rendered exactly as the student sees it */}
           <div
             id="certificate-preview"
             style={{
@@ -106,7 +135,7 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "24px 16px",
+              padding: "16px",
               borderRadius: "12px",
             }}
           >
@@ -131,6 +160,7 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
 
                 {/* 1. Student name */}
                 <div
+                  data-cert="name-container"
                   style={{
                     position: "absolute",
                     top: OVERLAY.name.top,
@@ -141,9 +171,10 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                   }}
                 >
                   <span
+                    data-cert="name"
                     style={{
                       fontFamily: "'Arial', sans-serif",
-                      fontSize: OVERLAY.name.fontSize,
+                      fontSize: OVERLAY.name.displayFontSize,
                       fontWeight: "600",
                       color: "#1a2b5e",
                       whiteSpace: "nowrap",
@@ -154,11 +185,15 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                 </div>
 
                 {/* 2. Certificate ID value */}
-                <div style={{ position: "absolute", top: OVERLAY.certId.top, left: OVERLAY.certId.left }}>
+                <div
+                  data-cert="certid-container"
+                  style={{ position: "absolute", top: OVERLAY.certId.top, left: OVERLAY.certId.left }}
+                >
                   <span
+                    data-cert="certid"
                     style={{
                       fontFamily: "'Helvetica Neue', Arial, sans-serif",
-                      fontSize: OVERLAY.certId.fontSize,
+                      fontSize: OVERLAY.certId.displayFontSize,
                       fontWeight: "800",
                       color: "#1a2b5e",
                       letterSpacing: "1.5px",
@@ -169,11 +204,15 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                 </div>
 
                 {/* 3. Completion date value */}
-                <div style={{ position: "absolute", top: OVERLAY.date.top, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}>
+                <div
+                  data-cert="date-container"
+                  style={{ position: "absolute", top: OVERLAY.date.top, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}
+                >
                   <span
+                    data-cert="date"
                     style={{
                       fontFamily: "'Helvetica Neue', Arial, sans-serif",
-                      fontSize: OVERLAY.date.fontSize,
+                      fontSize: OVERLAY.date.displayFontSize,
                       fontWeight: "800",
                       color: "#1a2b5e",
                       letterSpacing: "1px",
@@ -189,22 +228,27 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
         </ModalBody>
 
         <ModalFooter>
-          <HStack spacing={3}>
-            <Text fontSize="xs" color="gray.400" fontFamily="mono" flex={1}>
+          <Flex direction={{ base: "column", md: "row" }} align={{ base: "stretch", md: "center" }} gap={3} w="full">
+            <Text fontSize="xs" color="gray.400" fontFamily="mono" flex={1} isTruncated>
               Score: {certificate.score}% &nbsp;·&nbsp; {certificate.userName}
             </Text>
-            <Button
-              leftIcon={<FiDownload />}
-              colorScheme="green"
-              variant="outline"
-              onClick={downloadCertificate}
-              isLoading={isDownloading}
-              loadingText="Downloading"
-            >
-              Download
-            </Button>
-            <Button variant="outline" onClick={onClose}>Close</Button>
-          </HStack>
+            <HStack spacing={3} justify={{ base: "flex-end", md: "flex-end" }}>
+              <Button
+                leftIcon={<FiDownload />}
+                colorScheme="green"
+                variant="outline"
+                onClick={downloadCertificate}
+                isLoading={isDownloading}
+                loadingText="Downloading"
+                size={{ base: "sm", md: "md" }}
+              >
+                Download
+              </Button>
+              <Button variant="outline" onClick={onClose} size={{ base: "sm", md: "md" }}>
+                Close
+              </Button>
+            </HStack>
+          </Flex>
         </ModalFooter>
       </ModalContent>
     </Modal>

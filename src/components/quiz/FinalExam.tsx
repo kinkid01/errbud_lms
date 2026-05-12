@@ -117,7 +117,7 @@ function ResultsScreen({ score, passed, passingScore, onRetry }: {
     <Box p={{ base: 4, md: 8 }} maxW="560px" mx="auto">
       <Card borderRadius="2xl" boxShadow="sm" overflow="hidden">
         <Box h="6px" bg={passed ? "green.400" : "red.400"} />
-        <CardBody p={8}>
+        <CardBody p={{ base: 5, md: 8 }}>
           <VStack spacing={6} align="center">
             <CircularProgress
               value={score}
@@ -139,7 +139,7 @@ function ResultsScreen({ score, passed, passingScore, onRetry }: {
             </CircularProgress>
 
             <VStack spacing={2} align="center">
-              <Heading size="lg" color={passed ? "green.600" : "red.500"}>
+              <Heading size={{ base: "md", md: "lg" }} color={passed ? "green.600" : "red.500"} textAlign="center">
                 {passed ? "Final Exam Passed! 🎉" : "Not Quite There"}
               </Heading>
               <Text color="gray.500" fontSize="sm">
@@ -320,15 +320,15 @@ const FinalExam: React.FC = () => {
 
   if (ineligible) {
     return (
-      <Box p={8} textAlign="center" maxW="500px" mx="auto">
+      <Box p={{ base: 4, md: 8 }} textAlign="center" maxW="500px" mx="auto">
         <Card borderRadius="2xl" boxShadow="sm">
-          <CardBody p={8}>
+          <CardBody p={{ base: 5, md: 8 }}>
             <VStack spacing={4} align="center">
               <Box w="64px" h="64px" borderRadius="full" bg="red.100" display="flex" alignItems="center" justifyContent="center">
                 <Icon as={FiLock} boxSize={8} color="red.500" />
               </Box>
               <VStack spacing={2} align="center">
-                <Heading size="lg" color="red.600">Not Eligible for Final Exam</Heading>
+                <Heading size={{ base: "md", md: "lg" }} color="red.600">Not Eligible for Final Exam</Heading>
                 <Text color="gray.600" fontSize="md" textAlign="center">
                   {ineligibilityReason}
                 </Text>
@@ -347,7 +347,7 @@ const FinalExam: React.FC = () => {
 
   if (!questions.length) {
     return (
-      <Box p={8} textAlign="center">
+      <Box p={{ base: 4, md: 8 }} textAlign="center">
         <Text color="gray.500" mb={4}>
           The final exam has not been set up yet. Please ask your admin to create the exam questions.
         </Text>
@@ -402,14 +402,14 @@ const FinalExam: React.FC = () => {
                 </Text>
               </VStack>
 
-              <HStack spacing={3}>
-                <CircularProgress value={timerPct} color={timerColor} trackColor="gray.100" size="48px" thickness="8px">
+              <HStack spacing={2}>
+                <CircularProgress value={timerPct} color={timerColor} trackColor="gray.100" size={{ base: "40px", md: "48px" }} thickness="8px">
                   <CircularProgressLabel>
                     <Icon as={FiClock} boxSize={3} color={timerColor} />
                   </CircularProgressLabel>
                 </CircularProgress>
                 <VStack spacing={0} align="start">
-                  <Text fontSize="lg" fontWeight="bold" color={timerColor} lineHeight="1">
+                  <Text fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color={timerColor} lineHeight="1">
                     {formatTime(timeLeft)}
                   </Text>
                   <Text fontSize="10px" color="gray.400">remaining</Text>
@@ -431,13 +431,13 @@ const FinalExam: React.FC = () => {
 
         {/* Question card */}
         <Card borderRadius="2xl" boxShadow="sm">
-          <CardBody p={7}>
+          <CardBody p={{ base: 4, md: 7 }}>
             <VStack spacing={6} align="stretch">
               <Box>
                 <Badge colorScheme="purple" borderRadius="full" fontSize="xs" px={3} mb={3}>
                   Question {current + 1} of {questions.length}
                 </Badge>
-                <Heading size="md" color="gray.800" lineHeight="1.5" fontWeight="semibold">
+                <Heading size={{ base: "sm", md: "md" }} color="gray.800" lineHeight="1.5" fontWeight="semibold">
                   {q.text}
                 </Heading>
               </Box>
@@ -462,21 +462,22 @@ const FinalExam: React.FC = () => {
         </Card>
 
         {/* Navigation */}
-        <Flex justify="space-between" align="center" gap={3}>
+        <Flex justify="space-between" align="center" gap={2}>
           <Button variant="outline" borderRadius="xl" leftIcon={<FiArrowLeft />}
-            isDisabled={current === 0} onClick={() => setCurrent((p) => p - 1)} colorScheme="gray">
+            isDisabled={current === 0} onClick={() => setCurrent((p) => p - 1)} colorScheme="gray"
+            size={{ base: "sm", md: "md" }}>
             Previous
           </Button>
 
           {current < questions.length - 1 ? (
             <Button colorScheme="blue" borderRadius="xl" rightIcon={<FiArrowRight />}
-              onClick={() => setCurrent((p) => p + 1)}>
+              onClick={() => setCurrent((p) => p + 1)} size={{ base: "sm", md: "md" }}>
               Next
             </Button>
           ) : (
             <Button colorScheme="green" borderRadius="xl" leftIcon={<FiAward />}
               isDisabled={answeredCount < questions.length}
-              onClick={handleSubmit}>
+              onClick={handleSubmit} size={{ base: "sm", md: "md" }}>
               Submit Exam
             </Button>
           )}

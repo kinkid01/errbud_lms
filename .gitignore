@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
@@ -27,9 +26,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local env files
-.env*.local
+# env files — never commit any .env variant
 .env
+.env*
 
 # vercel
 .vercel
@@ -39,7 +38,3 @@ yarn-error.log*
 next-env.d.ts
 
 .windsurf/
-=======
-node_modules/
-.env
->>>>>>> 6c203a7d3c6940cb92d5035bf01a6482a489b148

@@ -132,7 +132,7 @@ function ResultsScreen({ questions, answers, score, passed, onRetry }: {
       <VStack spacing={6} align="stretch">
         <Card borderRadius="2xl" boxShadow="sm" overflow="hidden">
           <Box h="6px" bg={passed ? "green.400" : "red.400"} />
-          <CardBody p={8}>
+          <CardBody p={{ base: 5, md: 8 }}>
             <VStack spacing={6} align="center">
               <CircularProgress
                 value={score} color={passed ? "green.400" : "red.400"}
@@ -151,15 +151,15 @@ function ResultsScreen({ questions, answers, score, passed, onRetry }: {
               </CircularProgress>
 
               <VStack spacing={1} align="center">
-                <Heading size="lg" color={passed ? "green.600" : "red.500"}>
+                <Heading size={{ base: "md", md: "lg" }} color={passed ? "green.600" : "red.500"} textAlign="center">
                   {passed ? "Quiz Passed! 🎉" : "Not Quite There"}
                 </Heading>
-                <Text color="gray.500" fontSize="sm">
+                <Text color="gray.500" fontSize="sm" textAlign="center">
                   {correct} out of {questions.length} correct &nbsp;·&nbsp; 60% required to pass
                 </Text>
               </VStack>
 
-              <HStack spacing={3}>
+              <Flex gap={3} flexWrap="wrap" justify="center">
                 {!passed && (
                   <Button colorScheme="blue" borderRadius="xl" leftIcon={<FiRefreshCw />} onClick={onRetry}>
                     Retry Quiz
@@ -175,7 +175,7 @@ function ResultsScreen({ questions, answers, score, passed, onRetry }: {
                     Back to Modules
                   </Button>
                 </Link>
-              </HStack>
+              </Flex>
             </VStack>
           </CardBody>
         </Card>
@@ -370,14 +370,14 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
                 </Text>
               </VStack>
 
-              <HStack spacing={3}>
-                <CircularProgress value={timerPct} color={timerColor} trackColor="gray.100" size="48px" thickness="8px">
+              <HStack spacing={2}>
+                <CircularProgress value={timerPct} color={timerColor} trackColor="gray.100" size={{ base: "40px", md: "48px" }} thickness="8px">
                   <CircularProgressLabel>
                     <Icon as={FiClock} boxSize={3} color={timerColor} />
                   </CircularProgressLabel>
                 </CircularProgress>
                 <VStack spacing={0} align="start">
-                  <Text fontSize="lg" fontWeight="bold" color={timerColor} lineHeight="1">
+                  <Text fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color={timerColor} lineHeight="1">
                     {formatTime(timeLeft)}
                   </Text>
                   <Text fontSize="10px" color="gray.400">remaining</Text>
@@ -398,14 +398,14 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
         <QuestionDots total={questions.length} current={current} answers={answers} onSelect={setCurrent} />
 
         {/* Question card */}
-        <Card borderRadius="2xl" boxShadow="sm" width={"800px"}>
-          <CardBody p={7}>
+        <Card borderRadius="2xl" boxShadow="sm" w="full">
+          <CardBody p={{ base: 4, md: 7 }}>
             <VStack spacing={6} align="stretch">
               <Box>
                 <Badge colorScheme="blue" borderRadius="full" fontSize="xs" px={3} mb={3}>
                   Question {current + 1}
                 </Badge>
-                <Heading size="md" color="gray.800" lineHeight="1.5" fontWeight="semibold">
+                <Heading size={{ base: "sm", md: "md" }} color="gray.800" lineHeight="1.5" fontWeight="semibold">
                   {q.question}
                 </Heading>
               </Box>
@@ -431,19 +431,22 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
         </Card>
 
         {/* Navigation */}
-        <Flex justify="space-between" align="center" gap={3}>
+        <Flex justify="space-between" align="center" gap={2}>
           <Button variant="outline" borderRadius="xl" leftIcon={<FiArrowLeft />}
-            isDisabled={current === 0} onClick={() => setCurrent((p) => p - 1)} colorScheme="gray">
+            isDisabled={current === 0} onClick={() => setCurrent((p) => p - 1)} colorScheme="gray"
+            size={{ base: "sm", md: "md" }}>
             Previous
           </Button>
 
           {current < questions.length - 1 ? (
-            <Button colorScheme="blue" borderRadius="xl" rightIcon={<FiArrowRight />} onClick={() => setCurrent((p) => p + 1)}>
+            <Button colorScheme="blue" borderRadius="xl" rightIcon={<FiArrowRight />}
+              onClick={() => setCurrent((p) => p + 1)} size={{ base: "sm", md: "md" }}>
               Next
             </Button>
           ) : (
             <Button colorScheme="green" borderRadius="xl" leftIcon={<FiAward />}
-              isDisabled={answeredCount < questions.length} onClick={handleSubmit}>
+              isDisabled={answeredCount < questions.length} onClick={handleSubmit}
+              size={{ base: "sm", md: "md" }}>
               Submit Quiz
             </Button>
           )}

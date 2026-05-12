@@ -22,13 +22,11 @@ interface CertificateTemplateProps {
   };
 }
 
-// ─── Tune these to adjust overlay positions in the downloaded image ───────────
 const OVERLAY = {
-  name:   { top: "39%", fontSize: "38px" },
-  certId: { top: "80%", left: "7%",  fontSize: "14px" },
-  date:   { top: "80%", left: "60%", fontSize: "14px" },
+  name:   { top: "39%", fontSize: "38px",  displayFontSize: "min(38px, 3.96vw)" },
+  certId: { top: "80%", left: "7%",  fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
+  date:   { top: "80%", left: "60%", fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
 };
-// ─────────────────────────────────────────────────────────────────────────────
 
 const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }) => {
   const toast = useToast();
@@ -39,15 +37,45 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
     try {
       const { toPng } = await import('html-to-image');
 
-      const certificateElement = document.getElementById('certificate-template');
-      if (!certificateElement) throw new Error('Certificate element not found');
+      const certEl = document.getElementById('certificate-template') as HTMLElement | null;
+      if (!certEl) throw new Error('Certificate element not found');
 
+      // Clone off-screen at fixed 960px so the live element is never disrupted.
+      // This also ensures the captured size is always consistent regardless of device width.
+      const clone = certEl.cloneNode(true) as HTMLElement;
+      clone.removeAttribute('id');
+      clone.style.position = 'fixed';
+      clone.style.left = '-9999px';
+      clone.style.top = '0';
+      clone.style.width = '960px';
+      clone.style.boxShadow = 'none';
+
+      // Apply fixed font sizes and positions matched to the 960px canvas
+      const nameContainer   = clone.querySelector<HTMLElement>('[data-cert="name-container"]');
+      const nameSpan        = clone.querySelector<HTMLElement>('[data-cert="name"]');
+      const certIdContainer = clone.querySelector<HTMLElement>('[data-cert="certid-container"]');
+      const certIdSpan      = clone.querySelector<HTMLElement>('[data-cert="certid"]');
+      const dateContainer   = clone.querySelector<HTMLElement>('[data-cert="date-container"]');
+      const dateSpan        = clone.querySelector<HTMLElement>('[data-cert="date"]');
+
+      if (nameContainer)   nameContainer.style.top     = OVERLAY.name.top;
+      if (nameSpan)        nameSpan.style.fontSize      = OVERLAY.name.fontSize;
+      if (certIdContainer) certIdContainer.style.top   = OVERLAY.certId.top;
+      if (certIdSpan)      certIdSpan.style.fontSize    = OVERLAY.certId.fontSize;
+      if (dateContainer)   dateContainer.style.top     = OVERLAY.date.top;
+      if (dateSpan)        dateSpan.style.fontSize      = OVERLAY.date.fontSize;
+
+      document.body.appendChild(clone);
       await document.fonts.ready;
+      // Two rAF frames to ensure the browser has fully laid out the clone
+      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
 
-      const dataUrl = await toPng(certificateElement, {
+      const dataUrl = await toPng(clone, {
         pixelRatio: 2,
         skipAutoScale: true,
       });
+
+      document.body.removeChild(clone);
 
       const link = document.createElement('a');
       link.download = `certificate-${certificate.certificateId.slice(-12).toUpperCase()}.png`;
@@ -76,7 +104,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
   };
 
   return (
-    <Box minH="100vh" bg="#e8e8e8" p={6}>
+    <Box minH="100vh" bg="#e8e8e8" p={{ base: 3, md: 6 }}>
       {/* Header row: title + download button */}
       <Flex
         align="center"
@@ -85,7 +113,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
         mx="auto"
         mb={4}
       >
-        <Text fontSize="lg" fontWeight="600" color="gray.700">
+        <Text fontSize={{ base: "md", md: "lg" }} fontWeight="600" color="gray.700">
           Your Certificate
         </Text>
         <Button
@@ -123,6 +151,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
 
             {/* 1. Student name */}
             <div
+              data-cert="name-container"
               style={{
                 position: "absolute",
                 top: OVERLAY.name.top,
@@ -133,9 +162,10 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
               }}
             >
               <span
+                data-cert="name"
                 style={{
                   fontFamily: "'Arial', sans-serif",
-                  fontSize: OVERLAY.name.fontSize,
+                  fontSize: OVERLAY.name.displayFontSize,
                   fontWeight: "600",
                   color: "#1a2b5e",
                   whiteSpace: "nowrap",
@@ -145,12 +175,16 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
               </span>
             </div>
 
-            {/* 2. Certificate ID value */}
-            <div style={{ position: "absolute", top: OVERLAY.certId.top, left: OVERLAY.certId.left }}>
+            {/* 2. Certificate ID */}
+            <div
+              data-cert="certid-container"
+              style={{ position: "absolute", top: OVERLAY.certId.top, left: OVERLAY.certId.left }}
+            >
               <span
+                data-cert="certid"
                 style={{
                   fontFamily: "'Helvetica Neue', Arial, sans-serif",
-                  fontSize: OVERLAY.certId.fontSize,
+                  fontSize: OVERLAY.certId.displayFontSize,
                   fontWeight: "800",
                   color: "#1a2b5e",
                   letterSpacing: "1.5px",
@@ -160,12 +194,16 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
               </span>
             </div>
 
-            {/* 3. Completion date values */}
-            <div style={{ position: "absolute", top: OVERLAY.date.top, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}>
+            {/* 3. Completion date */}
+            <div
+              data-cert="date-container"
+              style={{ position: "absolute", top: OVERLAY.date.top, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}
+            >
               <span
+                data-cert="date"
                 style={{
                   fontFamily: "'Helvetica Neue', Arial, sans-serif",
-                  fontSize: OVERLAY.date.fontSize,
+                  fontSize: OVERLAY.date.displayFontSize,
                   fontWeight: "800",
                   color: "#1a2b5e",
                   letterSpacing: "1px",
