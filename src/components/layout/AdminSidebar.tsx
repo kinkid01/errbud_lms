@@ -81,7 +81,7 @@ export default function AdminSidebar({ mobileOpen = false, onMobileClose }: Prop
         zIndex={{ base: 200, md: 1 }}
         transition="all 0.2s ease"
         flexShrink={0}
-        overflow="hidden"
+        overflowY="auto"
       >
         {/* Logo */}
         <Flex
@@ -129,7 +129,7 @@ export default function AdminSidebar({ mobileOpen = false, onMobileClose }: Prop
         </Flex>
 
         {/* Nav Items */}
-        <VStack spacing={1} align="stretch" px={2} py={4} flex={1} overflowY="auto">
+        <VStack spacing={1} align="stretch" px={2} py={4}>
           {NAV.map((item) => {
             const active = isActive(item.href);
             return (
@@ -171,7 +171,7 @@ export default function AdminSidebar({ mobileOpen = false, onMobileClose }: Prop
         </VStack>
 
         {/* Bottom: User + Logout */}
-        <Box px={2} pb={4} flexShrink={0}>
+        <Box px={2} pb={4} mt="auto">
           <Divider mb={4} borderColor="gray.700" />
           <Flex
             align="center"
