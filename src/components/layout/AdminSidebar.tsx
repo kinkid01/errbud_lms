@@ -72,7 +72,7 @@ export default function AdminSidebar({ mobileOpen = false, onMobileClose }: Prop
 
       <Flex
         direction="column"
-        h="100vh"
+        h={{ base: "100%", md: "100vh" }}
         bg="gray.900"
         w={{ base: "240px", md: collapsed ? "72px" : "240px" }}
         position={{ base: "fixed", md: "relative" }}

@@ -70,7 +70,7 @@ export default function StudentSidebar({ mobileOpen = false, onMobileClose }: Pr
 
       <Flex
         direction="column"
-        h="100vh"
+        h={{ base: "100%", md: "100vh" }}
         bg="white"
         borderRight="1px solid"
         borderColor="gray.100"
