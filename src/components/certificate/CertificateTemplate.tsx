@@ -35,56 +35,50 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
   const downloadCertificate = async () => {
     setIsDownloading(true);
     try {
-      const { toPng } = await import('html-to-image');
+      const { jsPDF } = await import('jspdf');
 
-      const certEl = document.getElementById('certificate-template') as HTMLElement | null;
-      if (!certEl) throw new Error('Certificate element not found');
-
-      // Clone off-screen at fixed 960px so the live element is never disrupted.
-      // This also ensures the captured size is always consistent regardless of device width.
-      const clone = certEl.cloneNode(true) as HTMLElement;
-      clone.removeAttribute('id');
-      clone.style.position = 'fixed';
-      clone.style.left = '-9999px';
-      clone.style.top = '0';
-      clone.style.width = '960px';
-      clone.style.boxShadow = 'none';
-
-      // Apply fixed font sizes and positions matched to the 960px canvas
-      const nameContainer   = clone.querySelector<HTMLElement>('[data-cert="name-container"]');
-      const nameSpan        = clone.querySelector<HTMLElement>('[data-cert="name"]');
-      const certIdContainer = clone.querySelector<HTMLElement>('[data-cert="certid-container"]');
-      const certIdSpan      = clone.querySelector<HTMLElement>('[data-cert="certid"]');
-      const dateContainer   = clone.querySelector<HTMLElement>('[data-cert="date-container"]');
-      const dateSpan        = clone.querySelector<HTMLElement>('[data-cert="date"]');
-
-      if (nameContainer)   nameContainer.style.top     = OVERLAY.name.top;
-      if (nameSpan)        nameSpan.style.fontSize      = OVERLAY.name.fontSize;
-      if (certIdContainer) certIdContainer.style.top   = OVERLAY.certId.top;
-      if (certIdSpan)      certIdSpan.style.fontSize    = OVERLAY.certId.fontSize;
-      if (dateContainer)   dateContainer.style.top     = OVERLAY.date.top;
-      if (dateSpan)        dateSpan.style.fontSize      = OVERLAY.date.fontSize;
-
-      document.body.appendChild(clone);
-      await document.fonts.ready;
-      // Two rAF frames to ensure the browser has fully laid out the clone
-      await new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve())));
-
-      const dataUrl = await toPng(clone, {
-        pixelRatio: 2,
-        skipAutoScale: true,
+      // Fetch background image as base64
+      const imgResponse = await fetch('/images/certificate.png');
+      const imgBlob = await imgResponse.blob();
+      const imgBase64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(imgBlob);
       });
 
-      document.body.removeChild(clone);
+      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+      const W = doc.internal.pageSize.getWidth();  // 297mm
+      const H = doc.internal.pageSize.getHeight(); // 210mm
 
+      // Background
+      doc.addImage(imgBase64, 'PNG', 0, 0, W, H);
+
+      // Name — centered, bold, ~33pt
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(33);
+      doc.setTextColor(26, 43, 94);
+      doc.text(certificate.studentName, W * 0.5, H * 0.43, { align: 'center' });
+
+      // Certificate ID — left-aligned, ~12pt
+      doc.setFontSize(12);
+      doc.text(certificate.certificateId.slice(-12).toUpperCase(), W * 0.07, H * 0.835);
+
+      // Completion date — centered at 60%, ~12pt
+      doc.text(certificate.completionDate, W * 0.6, H * 0.835, { align: 'center' });
+
+      const fileName = `certificate-${certificate.certificateId.slice(-12).toUpperCase()}.pdf`;
+      const pdfBlob = doc.output('blob');
+      const url = URL.createObjectURL(pdfBlob);
       const link = document.createElement('a');
-      link.download = `certificate-${certificate.certificateId.slice(-12).toUpperCase()}.png`;
-      link.href = dataUrl;
+      link.href = url;
+      link.download = fileName;
       link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 100);
 
       toast({
         title: 'Certificate downloaded successfully',
-        description: 'Your certificate has been saved to your device.',
+        description: 'Your certificate has been saved as a PDF.',
         status: 'success',
         duration: 3000,
         isClosable: true,
