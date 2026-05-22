@@ -71,21 +71,13 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
       const pdfBlob = doc.output('blob');
       const url = URL.createObjectURL(pdfBlob);
 
-      // iOS Safari ignores the `download` attribute on blob URLs — open in a new tab instead
-      // so the user can use the share sheet to save the PDF.
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        window.open(url, '_blank');
-        setTimeout(() => URL.revokeObjectURL(url), 10000);
-      } else {
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = fileName;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setTimeout(() => URL.revokeObjectURL(url), 5000);
-      }
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
 
       toast({
         title: 'Certificate downloaded successfully',
