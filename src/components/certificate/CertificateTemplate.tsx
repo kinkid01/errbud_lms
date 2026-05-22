@@ -37,34 +37,35 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
     try {
       const { jsPDF } = await import('jspdf');
 
-      // Fetch background image as base64
-      const imgResponse = await fetch('/images/certificate.png');
-      const imgBlob = await imgResponse.blob();
+      // Load background image via canvas — Safari rejects fetch+FileReader for local assets
       const imgBase64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(imgBlob);
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = reject;
+        img.src = '/images/certificate.png';
       });
 
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const W = doc.internal.pageSize.getWidth();  // 297mm
-      const H = doc.internal.pageSize.getHeight(); // 210mm
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
 
-      // Background
       doc.addImage(imgBase64, 'PNG', 0, 0, W, H);
 
-      // Name — centered, bold, ~33pt
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(33);
       doc.setTextColor(26, 43, 94);
       doc.text(certificate.studentName, W * 0.5, H * 0.43, { align: 'center' });
 
-      // Certificate ID — left-aligned, ~12pt
       doc.setFontSize(12);
       doc.text(certificate.certificateId.slice(-12).toUpperCase(), W * 0.07, H * 0.835);
-
-      // Completion date — centered at 60%, ~12pt
       doc.text(certificate.completionDate, W * 0.6, H * 0.835, { align: 'center' });
 
       const fileName = `certificate-${certificate.certificateId.slice(-12).toUpperCase()}.pdf`;
@@ -79,11 +80,14 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
       document.body.removeChild(link);
       setTimeout(() => URL.revokeObjectURL(url), 5000);
 
+      const isSafari = /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
       toast({
-        title: 'Certificate downloaded successfully',
-        description: 'Your certificate has been saved as a PDF.',
+        title: 'Certificate ready',
+        description: isSafari
+          ? 'Your certificate has opened. Tap the share icon in Safari to save it to your Files.'
+          : 'Your certificate has been saved as a PDF.',
         status: 'success',
-        duration: 3000,
+        duration: isSafari ? 6000 : 3000,
         isClosable: true,
       });
     } catch (error) {
