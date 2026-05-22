@@ -35,38 +35,28 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
   const downloadCertificate = async () => {
     setIsDownloading(true);
     try {
-      const { jsPDF } = await import('jspdf');
+      const [{ jsPDF }, { default: html2canvas }] = await Promise.all([
+        import('jspdf'),
+        import('html2canvas'),
+      ]);
 
-      // Load background image via canvas — Safari rejects fetch+FileReader for local assets
-      const imgBase64 = await new Promise<string>((resolve, reject) => {
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        img.onload = () => {
-          const canvas = document.createElement('canvas');
-          canvas.width = img.naturalWidth;
-          canvas.height = img.naturalHeight;
-          const ctx = canvas.getContext('2d')!;
-          ctx.drawImage(img, 0, 0);
-          resolve(canvas.toDataURL('image/png'));
-        };
-        img.onerror = reject;
-        img.src = '/images/certificate.png';
+      const element = document.getElementById('certificate-template');
+      if (!element) throw new Error('Certificate element not found');
+
+      // Capture the already-rendered element — works on all browsers including Safari
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
       });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       const W = doc.internal.pageSize.getWidth();
       const H = doc.internal.pageSize.getHeight();
-
-      doc.addImage(imgBase64, 'PNG', 0, 0, W, H);
-
-      doc.setFont('helvetica', 'bold');
-      doc.setFontSize(33);
-      doc.setTextColor(26, 43, 94);
-      doc.text(certificate.studentName, W * 0.5, H * 0.43, { align: 'center' });
-
-      doc.setFontSize(12);
-      doc.text(certificate.certificateId.slice(-12).toUpperCase(), W * 0.07, H * 0.835);
-      doc.text(certificate.completionDate, W * 0.6, H * 0.835, { align: 'center' });
+      doc.addImage(imgData, 'JPEG', 0, 0, W, H);
 
       const fileName = `certificate-${certificate.certificateId.slice(-12).toUpperCase()}.pdf`;
       const pdfBlob = doc.output('blob');
