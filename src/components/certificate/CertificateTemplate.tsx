@@ -35,28 +35,38 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
   const downloadCertificate = async () => {
     setIsDownloading(true);
     try {
-      const [{ jsPDF }, { default: html2canvas }] = await Promise.all([
-        import('jspdf'),
-        import('html2canvas'),
-      ]);
+      const { jsPDF } = await import('jspdf');
 
-      const element = document.getElementById('certificate-template');
-      if (!element) throw new Error('Certificate element not found');
-
-      // Capture the already-rendered element — works on all browsers including Safari
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: null,
+      // Load background image via canvas — Safari rejects fetch+FileReader for local assets
+      const imgBase64 = await new Promise<string>((resolve, reject) => {
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext('2d')!;
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL('image/png'));
+        };
+        img.onerror = reject;
+        img.src = '/images/certificate.png';
       });
-
-      const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
       const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
       const W = doc.internal.pageSize.getWidth();
       const H = doc.internal.pageSize.getHeight();
-      doc.addImage(imgData, 'JPEG', 0, 0, W, H);
+
+      doc.addImage(imgBase64, 'PNG', 0, 0, W, H);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(33);
+      doc.setTextColor(26, 43, 94);
+      doc.text(certificate.studentName, W * 0.5, H * 0.43, { align: 'center' });
+
+      doc.setFontSize(12);
+      doc.text(certificate.certificateId.slice(-12).toUpperCase(), W * 0.07, H * 0.835);
+      doc.text(certificate.completionDate, W * 0.6, H * 0.835, { align: 'center' });
 
       const fileName = `certificate-${certificate.certificateId.slice(-12).toUpperCase()}.pdf`;
       const pdfBlob = doc.output('blob');
@@ -95,40 +105,76 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
   };
 
   return (
-    <Box minH="100vh" bg="#e8e8e8" p={{ base: 3, md: 6 }}>
-      {/* Header row: title + download button */}
-      <Flex
-        align="center"
-        justify="space-between"
+    <Box
+      minH="100vh"
+      bg="linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)"
+      py={{ base: 10, md: 14 }}
+      px={{ base: 4, md: 6 }}
+      position="relative"
+      overflowX="hidden"
+    >
+      {/* Decorative blurred orbs */}
+      <Box
+        position="absolute" top="-120px" left="-120px"
+        w="400px" h="400px" borderRadius="full"
+        bg="rgba(102,126,234,0.18)" filter="blur(90px)"
+        pointerEvents="none"
+      />
+      <Box
+        position="absolute" bottom="-120px" right="-120px"
+        w="400px" h="400px" borderRadius="full"
+        bg="rgba(118,75,162,0.18)" filter="blur(90px)"
+        pointerEvents="none"
+      />
+
+      {/* Header */}
+      <Box textAlign="center" mb={{ base: 6, md: 10 }}>
+        <Text
+          fontSize="xs"
+          fontWeight="700"
+          color="blue.300"
+          letterSpacing="0.2em"
+          textTransform="uppercase"
+          mb={3}
+        >
+          Achievement Unlocked
+        </Text>
+        <Text
+          fontSize={{ base: "2xl", md: "4xl" }}
+          fontWeight="800"
+          color="white"
+          lineHeight="1.2"
+          mb={2}
+        >
+          Congratulations, {certificate.studentName.split(" ")[0]}!
+        </Text>
+        <Text fontSize={{ base: "sm", md: "md" }} color="whiteAlpha.600">
+          You have successfully completed{" "}
+          <Box as="span" color="whiteAlpha.900" fontWeight="600">
+            {certificate.courseName}
+          </Box>
+        </Text>
+      </Box>
+
+      {/* Certificate card */}
+      <Box
         maxW="960px"
         mx="auto"
-        mb={4}
+        p={{ base: 2, md: 3 }}
+        bg="rgba(255,255,255,0.06)"
+        borderRadius="2xl"
+        border="1px solid rgba(255,255,255,0.12)"
+        boxShadow="0 40px 100px rgba(0,0,0,0.5)"
       >
-        <Text fontSize={{ base: "md", md: "lg" }} fontWeight="600" color="gray.700">
-          Your Certificate
-        </Text>
-        <Button
-          leftIcon={<FiDownload />}
-          colorScheme="blue"
-          size="sm"
-          borderRadius="lg"
-          onClick={downloadCertificate}
-          isLoading={isDownloading}
-          loadingText="Downloading..."
-        >
-          Download
-        </Button>
-      </Flex>
-
-      {/* Certificate */}
-      <Box display="flex" justifyContent="center">
         <div
           id="certificate-template"
           style={{
             position: "relative",
-            width: "min(960px, 100%)",
+            width: "100%",
             aspectRatio: "2000 / 1414",
-            boxShadow: "0 24px 64px rgba(0,0,0,0.22)",
+            borderRadius: "12px",
+            overflow: "hidden",
+            boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
           }}
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -207,6 +253,33 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
           </div>
         </div>
       </Box>
+
+      {/* Download button */}
+      <Flex justify="center" mt={{ base: 6, md: 8 }}>
+        <Button
+          leftIcon={<FiDownload />}
+          size="lg"
+          px={10}
+          fontSize="md"
+          fontWeight="700"
+          bg="white"
+          color="#0f3460"
+          borderRadius="full"
+          boxShadow="0 8px 32px rgba(0,0,0,0.35)"
+          _hover={{
+            transform: "translateY(-2px)",
+            boxShadow: "0 14px 40px rgba(0,0,0,0.45)",
+            bg: "gray.50",
+          }}
+          _active={{ transform: "translateY(0)" }}
+          transition="all 0.2s ease"
+          onClick={downloadCertificate}
+          isLoading={isDownloading}
+          loadingText="Preparing..."
+        >
+          Download Certificate
+        </Button>
+      </Flex>
     </Box>
   );
 };
