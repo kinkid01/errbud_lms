@@ -6,6 +6,7 @@ import {
   Button,
   Flex,
   Text,
+  useBreakpointValue,
   useToast,
 } from "@chakra-ui/react";
 import { FiDownload } from "react-icons/fi";
@@ -23,14 +24,17 @@ interface CertificateTemplateProps {
 }
 
 const OVERLAY = {
-  name:   { top: "39%", fontSize: "38px",  displayFontSize: "min(38px, 3.96vw)" },
-  certId: { top: "80%", left: "7%",  fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
-  date:   { top: "80%", left: "60%", fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
+  name:   { top: "39%", mobileTop: "36%", fontSize: "38px",  displayFontSize: "min(38px, 3.96vw)" },
+  certId: { top: "80%", mobileTop: "76%", left: "5%",  fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
+  date:   { top: "80%", mobileTop: "76%", left: "60%", fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
 };
 
 const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }) => {
   const toast = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
+  const nameTop   = useBreakpointValue({ base: OVERLAY.name.mobileTop,   md: OVERLAY.name.top });
+  const certIdTop = useBreakpointValue({ base: OVERLAY.certId.mobileTop, md: OVERLAY.certId.top });
+  const dateTop   = useBreakpointValue({ base: OVERLAY.date.mobileTop,   md: OVERLAY.date.top });
 
   const downloadCertificate = async () => {
     setIsDownloading(true);
@@ -191,7 +195,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
               data-cert="name-container"
               style={{
                 position: "absolute",
-                top: OVERLAY.name.top,
+                top: nameTop,
                 left: "50%",
                 transform: "translateX(-50%)",
                 width: "70%",
@@ -215,7 +219,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
             {/* 2. Certificate ID */}
             <div
               data-cert="certid-container"
-              style={{ position: "absolute", top: OVERLAY.certId.top, left: OVERLAY.certId.left }}
+              style={{ position: "absolute", top: certIdTop, left: OVERLAY.certId.left }}
             >
               <span
                 data-cert="certid"
@@ -234,7 +238,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
             {/* 3. Completion date */}
             <div
               data-cert="date-container"
-              style={{ position: "absolute", top: OVERLAY.date.top, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}
+              style={{ position: "absolute", top: dateTop, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}
             >
               <span
                 data-cert="date"

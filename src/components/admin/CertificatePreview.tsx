@@ -4,16 +4,13 @@ import {
   Modal,
   ModalOverlay,
   ModalContent,
-  ModalHeader,
   ModalBody,
-  ModalFooter,
   ModalCloseButton,
   Button,
+  Box,
   Text,
-  HStack,
-  VStack,
   Flex,
-  Heading,
+  useBreakpointValue,
   useToast,
 } from "@chakra-ui/react";
 import { FiDownload } from "react-icons/fi";
@@ -27,9 +24,9 @@ interface CertificatePreviewProps {
 }
 
 const OVERLAY = {
-  name:   { top: "38%", fontSize: "38px",  displayFontSize: "min(38px, 4.75vw)" },
-  certId: { top: "80%", left: "7%",  fontSize: "14px", displayFontSize: "clamp(7px, 1.75vw, 14px)" },
-  date:   { top: "80%", left: "60%", fontSize: "14px", displayFontSize: "clamp(7px, 1.75vw, 14px)" },
+  name:   { top: "39%", mobileTop: "36%", fontSize: "38px",  displayFontSize: "min(38px, 3.96vw)" },
+  certId: { top: "80%", mobileTop: "76%", left: "5%",  fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
+  date:   { top: "80%", mobileTop: "76%", left: "60%", fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
 };
 
 const CertificatePreview: React.FC<CertificatePreviewProps> = ({
@@ -39,70 +36,74 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
 }) => {
   const toast = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
+  const nameTop   = useBreakpointValue({ base: OVERLAY.name.mobileTop,   md: OVERLAY.name.top });
+  const certIdTop = useBreakpointValue({ base: OVERLAY.certId.mobileTop, md: OVERLAY.certId.top });
+  const dateTop   = useBreakpointValue({ base: OVERLAY.date.mobileTop,   md: OVERLAY.date.top });
 
   if (!certificate) return null;
+
+  const formattedDate = new Date(certificate.completionDate).toLocaleDateString("en-GB", {
+    day: "numeric", month: "long", year: "numeric",
+  });
 
   const downloadCertificate = async () => {
     setIsDownloading(true);
     try {
-      const { jsPDF } = await import('jspdf');
+      const { jsPDF } = await import("jspdf");
 
-      // Fetch background image as base64
-      const imgResponse = await fetch('/images/certificate.png');
-      const imgBlob = await imgResponse.blob();
       const imgBase64 = await new Promise<string>((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(imgBlob);
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => {
+          const canvas = document.createElement("canvas");
+          canvas.width = img.naturalWidth;
+          canvas.height = img.naturalHeight;
+          const ctx = canvas.getContext("2d")!;
+          ctx.drawImage(img, 0, 0);
+          resolve(canvas.toDataURL("image/png"));
+        };
+        img.onerror = reject;
+        img.src = "/images/certificate.png";
       });
 
-      const formattedDate = new Date(certificate.completionDate).toLocaleDateString('en-GB', {
-        day: 'numeric', month: 'long', year: 'numeric',
-      });
+      const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+      const W = doc.internal.pageSize.getWidth();
+      const H = doc.internal.pageSize.getHeight();
 
-      const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-      const W = doc.internal.pageSize.getWidth();  // 297mm
-      const H = doc.internal.pageSize.getHeight(); // 210mm
-
-      // Background
-      doc.addImage(imgBase64, 'PNG', 0, 0, W, H);
-
-      // Name — centered, bold, ~33pt
-      doc.setFont('helvetica', 'bold');
+      doc.addImage(imgBase64, "PNG", 0, 0, W, H);
+      doc.setFont("helvetica", "bold");
       doc.setFontSize(33);
       doc.setTextColor(26, 43, 94);
-      doc.text(certificate.userName, W * 0.5, H * 0.42, { align: 'center' });
+      doc.text(certificate.userName, W * 0.5, H * 0.43, { align: "center" });
 
-      // Certificate ID — left-aligned, ~12pt
       doc.setFontSize(12);
       doc.text(certificate.certificateId.slice(-12).toUpperCase(), W * 0.07, H * 0.835);
-
-      // Completion date — centered at 60%, ~12pt
-      doc.text(formattedDate, W * 0.6, H * 0.835, { align: 'center' });
+      doc.text(formattedDate, W * 0.6, H * 0.835, { align: "center" });
 
       const fileName = `certificate-${certificate.certificateId.slice(-12).toUpperCase()}.pdf`;
-      const pdfBlob = doc.output('blob');
+      const pdfBlob = doc.output("blob");
       const url = URL.createObjectURL(pdfBlob);
-      const link = document.createElement('a');
+      const link = document.createElement("a");
       link.href = url;
       link.download = fileName;
+      document.body.appendChild(link);
       link.click();
-      setTimeout(() => URL.revokeObjectURL(url), 100);
+      document.body.removeChild(link);
+      setTimeout(() => URL.revokeObjectURL(url), 5000);
 
       toast({
-        title: 'Certificate downloaded successfully',
-        description: 'The certificate has been saved as a PDF.',
-        status: 'success',
+        title: "Certificate ready",
+        description: "The certificate has been saved as a PDF.",
+        status: "success",
         duration: 3000,
         isClosable: true,
       });
     } catch (error) {
-      console.error('Error downloading certificate:', error);
+      console.error("Error downloading certificate:", error);
       toast({
-        title: 'Download failed',
-        description: 'Unable to download certificate. Please try again.',
-        status: 'error',
+        title: "Download failed",
+        description: "Unable to download certificate. Please try again.",
+        status: "error",
         duration: 3000,
         isClosable: true,
       });
@@ -114,46 +115,85 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
   return (
     <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", md: "5xl" }}>
       <ModalOverlay />
-      <ModalContent>
-        <ModalHeader>
-          <VStack align="start" spacing={0}>
-            <Heading size="md">Certificate Preview</Heading>
-            <Text fontSize="xs" color="gray.400" fontFamily="mono" isTruncated maxW="90%">
-              ID: {certificate.certificateId}
-            </Text>
-          </VStack>
-        </ModalHeader>
-        <ModalCloseButton />
+      <ModalContent
+        bg="linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)"
+        position="relative"
+        overflow="hidden"
+      >
+        {/* Decorative blurred orbs */}
+        <Box
+          position="absolute" top="-120px" left="-120px"
+          w="400px" h="400px" borderRadius="full"
+          bg="rgba(102,126,234,0.18)" filter="blur(90px)"
+          pointerEvents="none"
+        />
+        <Box
+          position="absolute" bottom="-120px" right="-120px"
+          w="400px" h="400px" borderRadius="full"
+          bg="rgba(118,75,162,0.18)" filter="blur(90px)"
+          pointerEvents="none"
+        />
 
-        <ModalBody pb={4}>
-          <div
-            id="certificate-preview"
-            style={{
-              backgroundColor: "#e8e8e8",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "16px",
-              borderRadius: "12px",
-            }}
+        <ModalCloseButton color="white" zIndex={10} />
+
+        <ModalBody py={{ base: 10, md: 14 }} px={{ base: 4, md: 6 }}>
+          {/* Header */}
+          <Box textAlign="center" mb={{ base: 6, md: 10 }}>
+            <Text
+              fontSize="xs"
+              fontWeight="700"
+              color="blue.300"
+              letterSpacing="0.2em"
+              textTransform="uppercase"
+              mb={3}
+            >
+              Achievement Unlocked
+            </Text>
+            <Text
+              fontSize={{ base: "2xl", md: "4xl" }}
+              fontWeight="800"
+              color="white"
+              lineHeight="1.2"
+              mb={2}
+            >
+              Congratulations, {certificate.userName.split(" ")[0]}!
+            </Text>
+            <Text fontSize={{ base: "sm", md: "md" }} color="whiteAlpha.600">
+              Certificate ID:{" "}
+              <Box as="span" color="whiteAlpha.900" fontWeight="600" fontFamily="mono">
+                {certificate.certificateId.slice(-12).toUpperCase()}
+              </Box>
+            </Text>
+          </Box>
+
+          {/* Certificate card */}
+          <Box
+            maxW="960px"
+            mx="auto"
+            p={{ base: 2, md: 3 }}
+            bg="rgba(255,255,255,0.06)"
+            borderRadius="2xl"
+            border="1px solid rgba(255,255,255,0.12)"
+            boxShadow="0 40px 100px rgba(0,0,0,0.5)"
           >
             <div
-              id="certificate-preview-inner"
+              id="certificate-preview"
               style={{
                 position: "relative",
-                width: "min(800px, 100%)",
+                width: "100%",
                 aspectRatio: "2000 / 1414",
+                borderRadius: "12px",
+                overflow: "hidden",
+                boxShadow: "0 8px 32px rgba(0,0,0,0.3)",
               }}
             >
-              {/* Background image */}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src="/images/certificate.png"
-                alt="certificate"
+                alt="certificate background"
                 style={{ position: "absolute", inset: 0, width: "100%", height: "100%", display: "block" }}
               />
 
-              {/* Overlays */}
               <div style={{ position: "absolute", inset: 0 }}>
 
                 {/* 1. Student name */}
@@ -161,7 +201,7 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                   data-cert="name-container"
                   style={{
                     position: "absolute",
-                    top: OVERLAY.name.top,
+                    top: nameTop,
                     left: "50%",
                     transform: "translateX(-50%)",
                     width: "70%",
@@ -182,10 +222,10 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                   </span>
                 </div>
 
-                {/* 2. Certificate ID value */}
+                {/* 2. Certificate ID */}
                 <div
                   data-cert="certid-container"
-                  style={{ position: "absolute", top: OVERLAY.certId.top, left: OVERLAY.certId.left }}
+                  style={{ position: "absolute", top: certIdTop, left: OVERLAY.certId.left }}
                 >
                   <span
                     data-cert="certid"
@@ -201,10 +241,10 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                   </span>
                 </div>
 
-                {/* 3. Completion date value */}
+                {/* 3. Completion date */}
                 <div
                   data-cert="date-container"
-                  style={{ position: "absolute", top: OVERLAY.date.top, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}
+                  style={{ position: "absolute", top: dateTop, left: "60%", transform: "translateX(-50%)", width: "30%", textAlign: "center" }}
                 >
                   <span
                     data-cert="date"
@@ -216,38 +256,41 @@ const CertificatePreview: React.FC<CertificatePreviewProps> = ({
                       letterSpacing: "1px",
                     }}
                   >
-                    {new Date(certificate.completionDate).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                    {formattedDate}
                   </span>
                 </div>
 
               </div>
             </div>
-          </div>
-        </ModalBody>
+          </Box>
 
-        <ModalFooter>
-          <Flex direction={{ base: "column", md: "row" }} align={{ base: "stretch", md: "center" }} gap={3} w="full">
-            <Text fontSize="xs" color="gray.400" fontFamily="mono" flex={1} isTruncated>
-              Score: {certificate.score}% &nbsp;·&nbsp; {certificate.userName}
-            </Text>
-            <HStack spacing={3} justify={{ base: "flex-end", md: "flex-end" }}>
-              <Button
-                leftIcon={<FiDownload />}
-                colorScheme="green"
-                variant="outline"
-                onClick={downloadCertificate}
-                isLoading={isDownloading}
-                loadingText="Downloading"
-                size={{ base: "sm", md: "md" }}
-              >
-                Download
-              </Button>
-              <Button variant="outline" onClick={onClose} size={{ base: "sm", md: "md" }}>
-                Close
-              </Button>
-            </HStack>
+          {/* Download button */}
+          <Flex justify="center" mt={{ base: 6, md: 8 }}>
+            <Button
+              leftIcon={<FiDownload />}
+              size="lg"
+              px={10}
+              fontSize="md"
+              fontWeight="700"
+              bg="white"
+              color="#0f3460"
+              borderRadius="full"
+              boxShadow="0 8px 32px rgba(0,0,0,0.35)"
+              _hover={{
+                transform: "translateY(-2px)",
+                boxShadow: "0 14px 40px rgba(0,0,0,0.45)",
+                bg: "gray.50",
+              }}
+              _active={{ transform: "translateY(0)" }}
+              transition="all 0.2s ease"
+              onClick={downloadCertificate}
+              isLoading={isDownloading}
+              loadingText="Preparing..."
+            >
+              Download Certificate
+            </Button>
           </Flex>
-        </ModalFooter>
+        </ModalBody>
       </ModalContent>
     </Modal>
   );
