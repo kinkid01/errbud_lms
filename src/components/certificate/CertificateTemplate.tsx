@@ -25,16 +25,21 @@ interface CertificateTemplateProps {
 
 const OVERLAY = {
   name:   { top: "39%", mobileTop: "36%", fontSize: "38px",  displayFontSize: "min(38px, 3.96vw)" },
-  certId: { top: "80%", mobileTop: "76%", left: "5%",  fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
-  date:   { top: "80%", mobileTop: "76%", left: "60%", fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
+  certId: { top: "80%", tabletTop: "77%", mobileTop: "76%", left: "5%",  fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
+  date:   { top: "80%", tabletTop: "77%", mobileTop: "76%", left: "60%", fontSize: "14px", displayFontSize: "clamp(7px, 1.46vw, 14px)" },
 };
 
 const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }) => {
   const toast = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
-  const nameTop   = useBreakpointValue({ base: OVERLAY.name.mobileTop,   md: OVERLAY.name.top });
-  const certIdTop = useBreakpointValue({ base: OVERLAY.certId.mobileTop, md: OVERLAY.certId.top });
-  const dateTop   = useBreakpointValue({ base: OVERLAY.date.mobileTop,   md: OVERLAY.date.top });
+  const nameTop      = useBreakpointValue({ base: OVERLAY.name.mobileTop,   md: OVERLAY.name.top });
+  const certIdTop    = useBreakpointValue({ base: OVERLAY.certId.mobileTop, md: OVERLAY.certId.tabletTop, lg: OVERLAY.certId.top });
+  const dateTop      = useBreakpointValue({ base: OVERLAY.date.mobileTop,   md: OVERLAY.date.tabletTop,   lg: OVERLAY.date.top });
+  const nameFontSize = useBreakpointValue({
+    base: OVERLAY.name.displayFontSize,  // mobile — unchanged
+    md:   "min(26px, 3.0vw)",            // tablet/medium
+    lg:   OVERLAY.name.displayFontSize,  // desktop — unchanged
+  });
 
   const downloadCertificate = async () => {
     setIsDownloading(true);
@@ -206,7 +211,7 @@ const CertificateTemplate: React.FC<CertificateTemplateProps> = ({ certificate }
                 data-cert="name"
                 style={{
                   fontFamily: "'Arial', sans-serif",
-                  fontSize: OVERLAY.name.displayFontSize,
+                  fontSize: nameFontSize,
                   fontWeight: "600",
                   color: "#1a2b5e",
                   whiteSpace: "nowrap",
