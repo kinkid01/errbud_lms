@@ -103,7 +103,7 @@ export default function CertificateManagement() {
   }
 
   return (
-    <Box p={8}>
+    <Box p={{ base: 4, md: 8 }}>
       <VStack spacing={8} align="stretch">
         {/* Header */}
         <HStack justify="space-between" flexWrap="wrap" gap={3}>
@@ -186,6 +186,7 @@ export default function CertificateManagement() {
         ) : (
           <Card bg={cardBg} border="1px" borderColor={borderColor} borderRadius="xl" overflow="hidden">
             <CardBody p={0}>
+              <Box overflowX="auto">
               <Table variant="simple">
                 <Thead bg={useColorModeValue("gray.50", "gray.700")}>
                   <Tr>
@@ -246,6 +247,7 @@ export default function CertificateManagement() {
                   ))}
                 </Tbody>
               </Table>
+              </Box>
             </CardBody>
           </Card>
         )}

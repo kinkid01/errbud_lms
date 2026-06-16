@@ -89,55 +89,57 @@ const UserProgressModal: React.FC<UserProgressModalProps> = ({
   };
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} size="6xl">
+    <Modal isOpen={isOpen} onClose={onClose} size={{ base: "full", md: "6xl" }}>
       <ModalOverlay />
-      <ModalContent maxW="90vw">
-        <ModalHeader>
-          <VStack align="start" spacing={2}>
-            <Heading size="lg">User Progress Details</Heading>
-            <Text color="gray.600">{user.name} - {user.email}</Text>
+      <ModalContent maxW={{ base: "100vw", md: "90vw" }} m={{ base: 0, md: 4 }} borderRadius={{ base: 0, md: "xl" }}>
+        <ModalHeader pb={2}>
+          <VStack align="start" spacing={1}>
+            <Heading size={{ base: "md", md: "lg" }}>User Progress Details</Heading>
+            <Text color="gray.600" fontSize={{ base: "xs", md: "sm" }} wordBreak="break-all">
+              {user.name} - {user.email}
+            </Text>
           </VStack>
         </ModalHeader>
         <ModalCloseButton />
         <ModalBody pb={6}>
           <VStack spacing={6} align="stretch">
             {/* Overview Stats */}
-            <HStack spacing={4}>
-              <Box flex={1} bg={cardBg} p={4} borderRadius="lg" border="1px" borderColor={borderColor}>
-                <HStack spacing={3}>
-                  <Icon as={FiBook} boxSize={8} color="blue.500" />
+            <HStack spacing={3} flexWrap="wrap">
+              <Box flex={1} minW="120px" bg={cardBg} p={3} borderRadius="lg" border="1px" borderColor={borderColor}>
+                <HStack spacing={2}>
+                  <Icon as={FiBook} boxSize={6} color="blue.500" />
                   <Stat>
-                    <StatLabel fontSize="sm">Total Courses</StatLabel>
+                    <StatLabel fontSize="xs">Total Courses</StatLabel>
                     <StatNumber fontSize="lg">{totalCourses}</StatNumber>
                   </Stat>
                 </HStack>
               </Box>
 
-              <Box flex={1} bg={cardBg} p={4} borderRadius="lg" border="1px" borderColor={borderColor}>
-                <HStack spacing={3}>
-                  <Icon as={FiCheckCircle} boxSize={8} color="green.500" />
+              <Box flex={1} minW="120px" bg={cardBg} p={3} borderRadius="lg" border="1px" borderColor={borderColor}>
+                <HStack spacing={2}>
+                  <Icon as={FiCheckCircle} boxSize={6} color="green.500" />
                   <Stat>
-                    <StatLabel fontSize="sm">Completed</StatLabel>
+                    <StatLabel fontSize="xs">Completed</StatLabel>
                     <StatNumber fontSize="lg">{completedCourses}</StatNumber>
                   </Stat>
                 </HStack>
               </Box>
 
-              <Box flex={1} bg={cardBg} p={4} borderRadius="lg" border="1px" borderColor={borderColor}>
-                <HStack spacing={3}>
-                  <Icon as={FiPlay} boxSize={8} color="yellow.500" />
+              <Box flex={1} minW="120px" bg={cardBg} p={3} borderRadius="lg" border="1px" borderColor={borderColor}>
+                <HStack spacing={2}>
+                  <Icon as={FiPlay} boxSize={6} color="yellow.500" />
                   <Stat>
-                    <StatLabel fontSize="sm">In Progress</StatLabel>
+                    <StatLabel fontSize="xs">In Progress</StatLabel>
                     <StatNumber fontSize="lg">{inProgressCourses}</StatNumber>
                   </Stat>
                 </HStack>
               </Box>
 
-              <Box flex={1} bg={cardBg} p={4} borderRadius="lg" border="1px" borderColor={borderColor}>
-                <HStack spacing={3}>
-                  <Icon as={FiTrendingUp} boxSize={8} color="purple.500" />
+              <Box flex={1} minW="120px" bg={cardBg} p={3} borderRadius="lg" border="1px" borderColor={borderColor}>
+                <HStack spacing={2}>
+                  <Icon as={FiTrendingUp} boxSize={6} color="purple.500" />
                   <Stat>
-                    <StatLabel fontSize="sm">Avg Score</StatLabel>
+                    <StatLabel fontSize="xs">Avg Score</StatLabel>
                     <StatNumber fontSize="lg">{averageScore !== null ? `${averageScore.toFixed(1)}%` : "N/A"}</StatNumber>
                   </Stat>
                 </HStack>
@@ -166,16 +168,16 @@ const UserProgressModal: React.FC<UserProgressModalProps> = ({
                       borderColor={borderColor}
                     >
                       <VStack align="stretch" spacing={3}>
-                        <HStack justify="space-between">
-                          <HStack spacing={3}>
-                            <Icon as={FiBook} color="blue.500" />
-                            <Text fontWeight="medium">Course ID: {progress.courseId}</Text>
+                        <VStack align="stretch" spacing={1}>
+                          <HStack spacing={3} flexWrap="wrap">
+                            <Icon as={FiBook} color="blue.500" flexShrink={0} />
+                            <Text fontWeight="medium" fontSize="sm">Course ID: {progress.courseId}</Text>
                             {getStatusBadge(progress.status)}
                           </HStack>
-                          <Text fontSize="sm" color="gray.500">
+                          <Text fontSize="xs" color="gray.500">
                             Enrolled: {new Date(progress.enrolledAt).toLocaleDateString()}
                           </Text>
-                        </HStack>
+                        </VStack>
 
                         <Progress
                           value={getProgressPercentage(progress)}
@@ -207,23 +209,24 @@ const UserProgressModal: React.FC<UserProgressModalProps> = ({
                             <Text fontSize="sm" fontWeight="medium" mb={2}>Curriculum Progress:</Text>
                             <VStack spacing={2} align="stretch">
                               {progress.curriculumProgress.map((curriculum) => (
-                                <HStack
+                                <Box
                                   key={curriculum.id}
                                   p={2}
                                   bg={gray50Bg}
                                   borderRadius="md"
-                                  justify="space-between"
                                 >
-                                  <HStack spacing={2}>
-                                    {getStatusBadge(curriculum.status)}
-                                    <Text fontSize="sm">Curriculum {curriculum.id}</Text>
+                                  <HStack spacing={2} flexWrap="wrap" justify="space-between">
+                                    <HStack spacing={2}>
+                                      {getStatusBadge(curriculum.status)}
+                                      <Text fontSize="sm">Curriculum {curriculum.id}</Text>
+                                    </HStack>
+                                    {curriculum.quizScore && (
+                                      <Text fontSize="xs" color="gray.600">
+                                        Quiz: {curriculum.quizScore}% ({curriculum.attempts} attempts)
+                                      </Text>
+                                    )}
                                   </HStack>
-                                  {curriculum.quizScore && (
-                                    <Text fontSize="sm" color="gray.600">
-                                      Quiz: {curriculum.quizScore}% ({curriculum.attempts} attempts)
-                                    </Text>
-                                  )}
-                                </HStack>
+                                </Box>
                               ))}
                             </VStack>
                           </Box>

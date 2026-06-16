@@ -129,8 +129,8 @@ export default function FinalExamPage() {
 
   // ── Locked — not all modules completed ───────────────────────────────────
   return (
-    <Box minH="100vh" bg="gray.50" display="flex" alignItems="center" justifyContent="center" p={6}>
-      <Box maxW="520px" w="full">
+    <Box minH="100vh" bg="gray.50" py={10} px={6}>
+      <Box maxW="520px" w="full" mx="auto">
         <VStack spacing={6} align="stretch">
           <VStack spacing={3} align="center" pt={4}>
             <Box
@@ -154,7 +154,7 @@ export default function FinalExamPage() {
                 textTransform="uppercase" letterSpacing="wider" mb={4}>
                 Your Progress
               </Text>
-              <VStack spacing={3} align="stretch">
+              <VStack spacing={3} align="stretch" maxH="60vh" overflowY="auto" pr={1}>
                 {requirements.map((req, i) => (
                   <React.Fragment key={req.id}>
                     <HStack spacing={3}>

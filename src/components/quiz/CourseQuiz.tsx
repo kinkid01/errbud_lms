@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import {
   Box,
   Flex,
@@ -48,8 +48,8 @@ interface CourseQuizProps {
   courseId: string;
 }
 
-// ── Option button ─────────────────────────────────────────────────────────────
-function OptionButton({
+// ── Option button (memoized — skips re-render on timer tick) ──────────────────
+const OptionButton = React.memo(function OptionButton({
   label,
   text,
   state,
@@ -93,10 +93,10 @@ function OptionButton({
       </Text>
     </Flex>
   );
-}
+});
 
-// ── Question dot navigator ────────────────────────────────────────────────────
-function QuestionDots({ total, current, answers, onSelect }: {
+// ── Question dot navigator (memoized) ─────────────────────────────────────────
+const QuestionDots = React.memo(function QuestionDots({ total, current, answers, onSelect }: {
   total: number; current: number; answers: number[]; onSelect: (i: number) => void;
 }) {
   return (
@@ -120,10 +120,59 @@ function QuestionDots({ total, current, answers, onSelect }: {
       })}
     </Flex>
   );
-}
+});
 
-// ── Results screen ────────────────────────────────────────────────────────────
-function ResultsScreen({ questions, answers, score, passed, onRetry }: {
+// ── Timer (owns its own state — only this component re-renders every second) ──
+const TimerDisplay = React.memo(function TimerDisplay({
+  totalSeconds,
+  onTimeUp,
+}: {
+  totalSeconds: number;
+  onTimeUp: () => void;
+}) {
+  const [timeLeft, setTimeLeft] = useState(totalSeconds);
+  // Always call the latest onTimeUp without making it a dep of the interval effect
+  const onTimeUpRef = useRef(onTimeUp);
+  useEffect(() => { onTimeUpRef.current = onTimeUp; });
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          clearInterval(id);
+          onTimeUpRef.current();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(id);
+  }, []); // runs once per mount
+
+  const timerColor = timeLeft > 120 ? "green.400" : timeLeft > 60 ? "orange.400" : "red.400";
+  const timerPct = Math.round(((totalSeconds - timeLeft) / totalSeconds) * 100);
+  const mm = String(Math.floor(timeLeft / 60)).padStart(2, "0");
+  const ss = String(timeLeft % 60).padStart(2, "0");
+
+  return (
+    <HStack spacing={2}>
+      <CircularProgress value={timerPct} color={timerColor} trackColor="gray.100" size={{ base: "40px", md: "48px" }} thickness="8px">
+        <CircularProgressLabel>
+          <Icon as={FiClock} boxSize={3} color={timerColor} />
+        </CircularProgressLabel>
+      </CircularProgress>
+      <VStack spacing={0} align="start">
+        <Text fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color={timerColor} lineHeight="1">
+          {mm}:{ss}
+        </Text>
+        <Text fontSize="10px" color="gray.400">remaining</Text>
+      </VStack>
+    </HStack>
+  );
+});
+
+// ── Results screen (memoized) ─────────────────────────────────────────────────
+const ResultsScreen = React.memo(function ResultsScreen({ questions, answers, score, passed, onRetry }: {
   questions: QuizQuestion[]; answers: number[]; score: number; passed: boolean; onRetry: () => void;
 }) {
   const correct = Math.round((score / 100) * questions.length);
@@ -220,7 +269,7 @@ function ResultsScreen({ questions, answers, score, passed, onRetry }: {
       </VStack>
     </Box>
   );
-}
+});
 
 // ── Main component ────────────────────────────────────────────────────────────
 const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
@@ -230,13 +279,13 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
   const [current, setCurrent] = useState(0);
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
-  const [timeLeft, setTimeLeft] = useState(QUIZ_SECONDS);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  // Increment to remount TimerDisplay (resets its internal state) on retry
+  const [timerKey, setTimerKey] = useState(0);
+
   const handleSubmitRef = useRef<(() => void) | null>(null);
   const lessonIdsWithQuiz = useRef<string[]>([]);
 
   useEffect(() => {
-    // Fetch course-level quiz instead of lesson-level quizzes
     api.get(`/modules/${courseId}`)
       .then((res) => {
         const course = res.data.data;
@@ -254,7 +303,7 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
           }
         }
 
-        lessonIdsWithQuiz.current = [courseId]; // Store course ID for progress tracking
+        lessonIdsWithQuiz.current = [courseId];
         setQuestions(allQuestions);
         setAnswers(new Array(allQuestions.length).fill(-1));
       })
@@ -262,56 +311,38 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
       .finally(() => setLoading(false));
   }, [courseId]);
 
-  useEffect(() => {
-    if (loading || !questions.length || submitted) return;
-
-    intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          clearInterval(intervalRef.current!);
-          handleSubmitRef.current?.();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(intervalRef.current!);
-  }, [loading, questions.length]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  const handleSubmit = () => {
-    clearInterval(intervalRef.current!);
+  const handleSubmit = useCallback(() => {
+    // Guard against double-fire (e.g. timer + manual submit race)
+    if (submitted) return;
     const correct = questions.reduce(
       (acc, q, i) => acc + (answers[i] === q.correctAnswer ? 1 : 0), 0
     );
     const finalScore = questions.length > 0 ? (correct / questions.length) * 100 : 0;
     setScore(finalScore);
     setSubmitted(true);
-
-    // Save quiz score to backend for course-level progress
     api
       .put(`/progress/course/${courseId}/complete`, { quizScore: Math.round(finalScore) })
       .catch(() => {});
-  };
+  }, [questions, answers, submitted, courseId]);
 
-  useEffect(() => {
-    handleSubmitRef.current = handleSubmit;
-  });
+  // Keep ref fresh so TimerDisplay always calls the latest handleSubmit
+  useEffect(() => { handleSubmitRef.current = handleSubmit; });
 
-  const handleRetry = () => {
-    setAnswers(new Array(questions.length).fill(-1));
+  // Stable reference — TimerDisplay never re-renders due to this prop changing
+  const onTimeUp = useCallback(() => { handleSubmitRef.current?.(); }, []);
+
+  const handleRetry = useCallback(() => {
+    setAnswers((prev) => new Array(prev.length).fill(-1));
     setSubmitted(false);
     setScore(0);
     setCurrent(0);
-    setTimeLeft(QUIZ_SECONDS);
-    clearInterval(intervalRef.current!);
-    intervalRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) { clearInterval(intervalRef.current!); return 0; }
-        return prev - 1;
-      });
-    }, 1000);
-  };
+    setTimerKey((k) => k + 1); // remounts TimerDisplay with fresh countdown
+  }, []);
+
+  const handleNext = useCallback(() => setCurrent((p) => p + 1), []);
+  const handlePrev = useCallback(() => setCurrent((p) => p - 1), []);
+
+  const answeredCount = useMemo(() => answers.filter((a) => a !== -1).length, [answers]);
 
   if (loading) {
     return (
@@ -347,11 +378,7 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
   }
 
   const q = questions[current];
-  const answeredCount = answers.filter((a) => a !== -1).length;
-  const timerColor = timeLeft > 120 ? "green.400" : timeLeft > 60 ? "orange.400" : "red.400";
-  const timerPct = Math.round(((QUIZ_SECONDS - timeLeft) / QUIZ_SECONDS) * 100);
-  const formatTime = (s: number) =>
-    `${String(Math.floor(s / 60)).padStart(2, "0")}:${String(s % 60).padStart(2, "0")}`;
+  const timerPct = Math.round(((QUIZ_SECONDS - 0) / QUIZ_SECONDS) * 100); // visual only — actual pct lives in TimerDisplay
 
   return (
     <Box p={{ base: 4, md: 8 }} maxW="960px" mx="auto">
@@ -370,19 +397,8 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
                 </Text>
               </VStack>
 
-              <HStack spacing={2}>
-                <CircularProgress value={timerPct} color={timerColor} trackColor="gray.100" size={{ base: "40px", md: "48px" }} thickness="8px">
-                  <CircularProgressLabel>
-                    <Icon as={FiClock} boxSize={3} color={timerColor} />
-                  </CircularProgressLabel>
-                </CircularProgress>
-                <VStack spacing={0} align="start">
-                  <Text fontSize={{ base: "md", md: "lg" }} fontWeight="bold" color={timerColor} lineHeight="1">
-                    {formatTime(timeLeft)}
-                  </Text>
-                  <Text fontSize="10px" color="gray.400">remaining</Text>
-                </VStack>
-              </HStack>
+              {/* TimerDisplay owns its own interval — parent never re-renders from ticks */}
+              <TimerDisplay key={timerKey} totalSeconds={QUIZ_SECONDS} onTimeUp={onTimeUp} />
             </Flex>
 
             <Box mt={4}>
@@ -419,9 +435,11 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
                     state={answers[current] === idx ? "selected" : "idle"}
                     onClick={() => {
                       if (submitted) return;
-                      const updated = [...answers];
-                      updated[current] = idx;
-                      setAnswers(updated);
+                      setAnswers((prev) => {
+                        const updated = [...prev];
+                        updated[current] = idx;
+                        return updated;
+                      });
                     }}
                   />
                 ))}
@@ -433,14 +451,14 @@ const CourseQuiz: React.FC<CourseQuizProps> = ({ courseId }) => {
         {/* Navigation */}
         <Flex justify="space-between" align="center" gap={2}>
           <Button variant="outline" borderRadius="xl" leftIcon={<FiArrowLeft />}
-            isDisabled={current === 0} onClick={() => setCurrent((p) => p - 1)} colorScheme="gray"
+            isDisabled={current === 0} onClick={handlePrev} colorScheme="gray"
             size={{ base: "sm", md: "md" }}>
             Previous
           </Button>
 
           {current < questions.length - 1 ? (
             <Button colorScheme="blue" borderRadius="xl" rightIcon={<FiArrowRight />}
-              onClick={() => setCurrent((p) => p + 1)} size={{ base: "sm", md: "md" }}>
+              onClick={handleNext} size={{ base: "sm", md: "md" }}>
               Next
             </Button>
           ) : (
